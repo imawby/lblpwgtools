@@ -246,20 +246,28 @@ namespace ana
   //----------------------------------------------------------------------
   TFile* SpectrumLoaderBase::GetNextFile()
   {
+
+    std::cout << "CCCCCCC" << std::endl;
+
     TFile* f = fFileSource->GetNextFile();
     if(!f) return 0; // out of files
 
-    TTree* trPot;
-    //    if(f->GetListOfKeys()->Contains("cafmaker"))
-    //      trPot = (TTree*)f->Get("mvaselectnumu/pottree");
+    TTree* trPot(nullptr);
+       if(f->GetListOfKeys()->Contains("cafmaker"))
+          trPot = (TTree*)f->Get("mvaselectnumu/pottree");
+       else
+	 std::cout << "CRYYYYYY" << std::endl;
+
     //    else
     //      trPot = (TTree*)f->Get("mvaselect/pottree");
 
+    /*
     if (f->GetListOfKeys()->Contains("meta"))
       trPot = (TTree*)f->Get("meta");
     else
       trPot = (TTree*)f->Get("pottree");
     assert(trPot);
+    */
 
     double pot;
     trPot->SetBranchAddress("pot", &pot);
@@ -269,6 +277,8 @@ namespace ana
 
       fPOT += pot;
     }
+
+    std::cout << "EEEEEEEE" << std::endl;
 
     return f;
   }

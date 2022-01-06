@@ -40,6 +40,9 @@ namespace caf
     double Elep_reco;
     double theta_reco;
 
+    double selTrackPandizzleScore;
+    double selShowerPandrizzleScore;
+
     double RecoLepEnNue;
     double RecoHadEnNue;
     double RecoLepEnNumu;
