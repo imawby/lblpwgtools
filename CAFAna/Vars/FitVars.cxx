@@ -32,6 +32,31 @@ namespace ana
   const FitDmSq21Scaled kFitDmSq21Scaled;
   const FitRho kFitRho;
 
+
+  ConstrainedFitDeltaCP::ConstrainedFitDeltaCP(double lowLimit, double highLimit) : IConstrainedFitVar("deltaCP", "#delta_{CP}"), fLowLimit(lowLimit), fHighLimit(highLimit)
+  {}
+
+  //----------------------------------------------------------------------
+
+    double ConstrainedFitDeltaCP::GetValue(const osc::IOscCalcAdjustable* osc) const
+    {
+        return osc->GetdCP();
+    }
+
+    void ConstrainedFitDeltaCP::SetValue(osc::IOscCalcAdjustable* osc, double val) const
+    {
+        osc->SetdCP(val);
+    }
+
+    double ConstrainedFitDeltaCP::LowLimit() const
+    {
+        return fLowLimit;
+    }
+
+    double ConstrainedFitDeltaCP::HighLimit() const
+    {
+        return fHighLimit;
+    }
   //----------------------------------------------------------------------
   double FitTheta13::GetValue(const osc::IOscCalcAdjustable* osc) const
   {

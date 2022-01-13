@@ -8,7 +8,9 @@ set(scripts_to_install
   make_mh_throws.C
   mh_joint.C
   octant_joint.C
-  spec_variations.C)
+  spec_variations.C
+  /dune/app/users/imawby/lblpwgtools/Resolution/deltaCPResolution_statisticalOnly.C
+)
 
 set(scripts_to_build
   asimov_joint

@@ -1,0 +1,256 @@
+// Make resolution plot <- with just statistical fluctuations
+// cafe deltaCPResolution_statisticalOnly.C
+
+#include "CAFAna/Analysis/Resolution.h"
+
+#include "CAFAna/Core/SpectrumLoader.h"
+#include "CAFAna/Core/Spectrum.h"
+#include "CAFAna/Core/Binning.h"
+#include "CAFAna/Core/Var.h"
+#include "CAFAna/Cuts/TruthCuts.h"
+#include "CAFAna/Cuts/AnaCuts.h"
+#include "StandardRecord/SRProxy.h"
+#include "TCanvas.h"
+#include "TH1.h"
+#include "TGraph.h"
+#include "TMath.h"
+
+// New includes for this macro
+#include "CAFAna/Experiment/SingleSampleExperiment.h"
+#include "CAFAna/Prediction/PredictionNoExtrap.h"
+#include "CAFAna/Analysis/Calcs.h"
+#include "OscLib/OscCalcPMNSOpt.h"
+#include "CAFAna/Fit/MinuitFitter.h"
+#include "CAFAna/Vars/FitVars.h"
+#include "CAFAna/Experiment/MultiExperiment.h"
+
+#include "TF1.h"
+#include "Math/WrappedTF1.h"
+#include "Math/BrentRootFinder.h"
+
+// also add in some RHC files!
+
+using namespace ana;
+
+const std::string INPUT_FILE_NAME = "root://fndca1.fnal.gov:1094/pnfs/fnal.gov/usr/dune/resilient/users/imawby/Test.root";
+
+void PerformFit(osc::IOscCalcAdjustable *& calc, MultiExperiment &experiment,
+  const double deltaCPSeed, const bool isLowerOctant, double &bestDeltaCP, double &bestChiSquared);
+void SetOscCalc_NuFit(osc::IOscCalcAdjustable *& calc, const double deltaCP);
+void deltaCPResolution_statisticalOnly();
+int GetBin(TH1D * hist, double value);
+
+void deltaCPResolution_statisticalOnly()
+{
+  std::cout << "Reading caf files..." << std::endl;
+
+  TFile * inputFile = new TFile(INPUT_FILE_NAME.c_str(), "READ");
+
+  PredictionNoExtrap& predNue_FHC_IZZLE = *ana::LoadFrom<PredictionNoExtrap>(inputFile, "predNue_FHC_IZZLE").release();
+  PredictionNoExtrap& predNumu_FHC_IZZLE = *ana::LoadFrom<PredictionNoExtrap>(inputFile, "predNumu_FHC_IZZLE").release();
+  PredictionNoExtrap& predNue_FHC_CVN = *ana::LoadFrom<PredictionNoExtrap>(inputFile, "predNue_FHC_CVN").release();
+  PredictionNoExtrap& predNumu_FHC_CVN = *ana::LoadFrom<PredictionNoExtrap>(inputFile, "predNumu_FHC_CVN").release();
+
+  const double pot = 3.5 * 1.47e21 * 40/1.13;
+
+  std::cout << "Read files!" << std::endl;
+
+  std::cout << "Spectra filled!" << std::endl;
+
+  const double trueDeltaCP(0.0 * TMath::Pi());
+  TH1D * bestFitDeltaCPValues = new TH1D("bestFitDeltaCPValues", "bestFitDeltaCPValues", 100, 0.0, 2.0 * M_PI);
+  bestFitDeltaCPValues->SetDirectory(0);
+
+
+  for (unsigned int i = 0; i < 1; ++i)
+  {
+      osc::IOscCalcAdjustable* calc = DefaultOscCalc();
+      SetOscCalc_NuFit(calc, trueDeltaCP);
+
+      // Make the mock data for trueDeltaCP value
+      const Spectrum nueFluctuations_FHC = predNue_FHC_IZZLE.Predict(calc).MockData(pot);
+      const Spectrum numuFluctuations_FHC = predNumu_FHC_IZZLE.Predict(calc).MockData(pot);
+
+      TCanvas * c1 = new TCanvas("c1", "c1");
+      nueFluctuations_FHC.ToTH1(pot, kBlue)->Draw("hist");
+      TCanvas * c2 = new TCanvas("c2", "c2");
+      numuFluctuations_FHC.ToTH1(pot, kRed)->Draw("hist");
+
+      return;
+
+      // Create an experiment object to compare predictions to my data
+      SingleSampleExperiment nueExperiment_FHC(&predNue_FHC_IZZLE, nueFluctuations_FHC);
+      SingleSampleExperiment numuExperiment_FHC(&predNumu_FHC_IZZLE, numuFluctuations_FHC);
+      MultiExperiment multiExperiment({&nueExperiment_FHC, &numuExperiment_FHC});
+
+      // Make several fits to avoid falling into the wrong minima (find the best deltaCP)
+      double bestChiSquared(std::numeric_limits<float>::max()), bestDeltaCP(999);
+
+      PerformFit(calc, multiExperiment, -1.0 * M_PI, true, bestDeltaCP, bestChiSquared);
+      PerformFit(calc, multiExperiment, -1.0 * M_PI, false, bestDeltaCP, bestChiSquared);
+
+      PerformFit(calc, multiExperiment, -0.5 * M_PI, true, bestDeltaCP, bestChiSquared);
+      PerformFit(calc, multiExperiment, -0.5 * M_PI, false, bestDeltaCP, bestChiSquared);
+
+      PerformFit(calc, multiExperiment, 0.0 * M_PI, true, bestDeltaCP, bestChiSquared);
+      PerformFit(calc, multiExperiment, 0.0 * M_PI, false, bestDeltaCP, bestChiSquared);
+
+      PerformFit(calc, multiExperiment, 0.5 * M_PI, true, bestDeltaCP, bestChiSquared);
+      PerformFit(calc, multiExperiment, 0.5 * M_PI, false, bestDeltaCP, bestChiSquared);
+
+      bestFitDeltaCPValues->Fill(bestDeltaCP);
+
+      std::cout << "///////////////////////////////" << std::endl;
+      std::cout << "i: " << i << std::endl;
+      std::cout << "True DeltaCP: " << trueDeltaCP << std::endl;
+      std::cout << "Best DeltaCP: " << bestDeltaCP << std::endl;
+      std::cout << "///////////////////////////////" << std::endl;
+  }
+
+  // Now need to shift histogram so i can fit a gaussian to a periodic function
+
+  double bestEntries(-9999);
+  double bestCentre(9999);
+
+  for (int i = 1; i <= bestFitDeltaCPValues->GetNbinsX(); ++i)
+  {
+      const double binContent(bestFitDeltaCPValues->GetBinContent(i));
+      if (binContent > bestEntries)
+      {
+          bestEntries = binContent;
+          bestCentre = bestFitDeltaCPValues->GetBinCenter(i);
+      }
+  }
+
+  std::cout << "bestEntries: " << bestEntries << std::endl;
+  std::cout << "bestCentre: " << bestCentre << std::endl;
+
+  // do i need to change this? (-> need to do it for lower edge perhaps?)
+  const double min(bestCentre - TMath::Pi());
+  const double max(bestCentre + TMath::Pi());
+
+  std::cout << "min: " << min << std::endl;
+  std::cout << "max: " << max << std::endl;
+
+  TH1D * shiftedDeltaCPValues = new TH1D("shiftedDeltaCPValues", "shiftedDeltaCPValues", 100, min, max);
+
+  for (int i = 1; i <= bestFitDeltaCPValues->GetNbinsX(); ++i)
+  {
+      const float binCenter(bestFitDeltaCPValues->GetBinCenter(i));
+      const float binContent(bestFitDeltaCPValues->GetBinContent(i));
+
+      if (binContent < std::numeric_limits<float>::epsilon())
+          continue;
+
+      const double separation(binCenter - bestCentre);
+
+      int shiftedBin(GetBin(shiftedDeltaCPValues, binCenter));
+
+      if (std::fabs(separation) > TMath::Pi())
+      {
+          if (separation > 0.0)
+          {
+              double jam = (bestCentre - TMath::Pi()) + (binCenter - (bestCentre + TMath::Pi()));
+              shiftedBin = GetBin(shiftedDeltaCPValues, jam);
+          }
+          else
+          {
+              double jam = (bestCentre + TMath::Pi()) - (binCenter - (bestCentre - TMath::Pi()));
+              shiftedBin = GetBin(shiftedDeltaCPValues, jam);
+          }
+      }
+
+      shiftedDeltaCPValues->SetBinContent(shiftedBin, binContent);
+  }
+
+  // now fit a gaussian!!! 
+  TF1 * gaussianFit = new TF1("gaussianFit", "[0] * exp(-0.5 * ((x - [1])/ [2])^2)", min, max);
+  gaussianFit->SetParameter(1, bestCentre);
+  shiftedDeltaCPValues->Fit("gaussianFit");
+
+  TCanvas * bee = new TCanvas("bee", "bee");
+  bee->Divide(2,1);
+  bee->cd(1);
+  bestFitDeltaCPValues->SetTitle("[0, 2pi];Resolution;nEntries");
+  bestFitDeltaCPValues->SetLineColor(kPink);
+  bestFitDeltaCPValues->SetLineWidth(2);
+  bestFitDeltaCPValues->Draw("hist");
+  bee->cd(2);
+  shiftedDeltaCPValues->SetTitle("shifted;Resolution;nEntries");
+  shiftedDeltaCPValues->SetLineColor(kPink);
+  shiftedDeltaCPValues->SetLineWidth(2);
+  shiftedDeltaCPValues->GetXaxis()->SetRangeUser(min, max);
+  shiftedDeltaCPValues->Draw("hist");
+  gaussianFit->Draw("same");
+  */
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
+int GetBin(TH1D * hist, double value)
+{
+    for (int i = 1; i <= hist-> GetNbinsX(); ++i)
+    {
+        double lowEdge(hist->GetBinLowEdge(i));
+        double highEdge(lowEdge + hist->GetBinWidth(i));
+
+        if ((value > lowEdge) && (value < highEdge))
+            return i;
+    }
+
+    return 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
+void SetOscCalc_NuFit(osc::IOscCalcAdjustable *& calc, const double deltaCP)
+{
+  calc->SetRho(2.848); 
+  calc->SetDmsq21(7.39e-5);
+  calc->SetDmsq32(2.451e-3);
+  calc->SetTh12(0.5903);
+  calc->SetTh13(0.150);
+  calc->SetTh23(0.866);
+  calc->SetdCP(deltaCP);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
+void PerformFit(osc::IOscCalcAdjustable *& calc, MultiExperiment &experiment,
+  const double deltaCPSeed, const bool isLowerOctant, double &bestDeltaCP, double &bestChiSquared)
+{
+  SetOscCalc_NuFit(calc, deltaCPSeed);
+
+  double deltaCP(9999), chiSquared(9999);
+
+  if (isLowerOctant)
+  {
+      MinuitFitter fit(&experiment, {&kFitDmSq32NHScaled, &kFitSinSqTheta23LowerOctant, &kFitDeltaInPiUnits});
+      chiSquared = fit.Fit(calc)->EvalMetricVal();
+      deltaCP = calc->GetdCP();
+  }
+  else
+  {
+      MinuitFitter fit(&experiment, {&kFitDmSq32NHScaled, &kFitSinSqTheta23UpperOctant, &kFitDeltaInPiUnits});
+      chiSquared = fit.Fit(calc)->EvalMetricVal();
+      deltaCP = calc->GetdCP();
+  }
+
+   if (chiSquared < bestChiSquared)
+   {
+       bestChiSquared = chiSquared;
+       bestDeltaCP = deltaCP;
+   }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
+
+  /*std::cout << "after: " << std::endl;
+  std::cout << "rho: " << calc->GetRho() << std::endl;
+  std::cout << "dmsq21: " << calc->GetDmsq21() << std::endl;
+  std::cout << "dmsq32: " << calc->GetDmsq32() << std::endl;
+  std::cout << "theta12: " << calc->GetTh12() << std::endl;
+  std::cout << "theta13: " << calc->GetTh13() << std::endl;
+  std::cout << "theta23: " << calc->GetTh23() << std::endl;
+  std::cout << "DeltaCP: " << calc->GetdCP() << std::endl;*/

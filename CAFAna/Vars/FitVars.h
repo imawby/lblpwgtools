@@ -22,6 +22,24 @@ namespace ana
 
   //----------------------------------------------------------------------
 
+  /// 
+  class ConstrainedFitDeltaCP: virtual public IConstrainedFitVar
+  {
+  public:
+    ConstrainedFitDeltaCP(double lowLimit, double highLimit);
+    double GetValue(const osc::IOscCalcAdjustable* osc) const override;
+    void SetValue(osc::IOscCalcAdjustable* osc, double val) const override;
+
+    double LowLimit() const override;
+    double HighLimit() const override;
+
+    double fLowLimit;
+    double fHighLimit;
+};
+
+
+  //----------------------------------------------------------------------
+
   /// \f$ \sin^22\theta_{13} \f$
   class FitSinSq2Theta13: virtual public IConstrainedFitVar
   {
@@ -83,7 +101,7 @@ namespace ana
     void SetValue(osc::IOscCalcAdjustableStan* osc, stan::math::var val) const override;
 
     double LowLimit() const override { return 0; }
-    double HighLimit() const override { return 1; }
+    double HighLimit() const override { return 1.0; }
 };
 
   /// \f$ \sin^2\theta_{23} \f$
