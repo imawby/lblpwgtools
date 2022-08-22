@@ -254,9 +254,11 @@ namespace ana
 
     TTree* trPot(nullptr);
        if(f->GetListOfKeys()->Contains("cafmaker"))
-          trPot = (TTree*)f->Get("mvaselectnumu/pottree");
+          trPot = (TTree*)f->Get("cafmaker/pottree");
+       else if(f->GetListOfKeys()->Contains("meta"))
+          trPot = (TTree*)f->Get("meta");
        else
-	 std::cout << "CRYYYYYY" << std::endl;
+          std::cout << "CRYYYYYY" << std::endl;
 
     //    else
     //      trPot = (TTree*)f->Get("mvaselect/pottree");

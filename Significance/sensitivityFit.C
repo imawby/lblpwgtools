@@ -14,6 +14,7 @@
 #include "TH1.h"
 #include "TGraph.h"
 #include "TMath.h"
+#include "TTree.h"
 
 // New includes for this macro
 #include "CAFAna/Experiment/SingleSampleExperiment.h"
@@ -36,8 +37,7 @@ using namespace ana;
 
 const std::string INPUT_FILE_NAME = "/dune/data/users/imawby/standardCAF/StateFiles.root";
 
-void PerformFit(osc::IOscCalcAdjustable *& calc, MultiExperiment &experiment,
-  const double deltaCPSeed, const bool isLowerOctant, double &bestDeltaCP, double &bestChiSquared);
+void PerformFit(osc::IOscCalcAdjustable *& calc, MultiExperiment &experiment, const double deltaCPSeed, const bool isLowerOctant, double &bestChiSquared, bool fitCPC);
 void SetOscCalc_CentralValue_NO(osc::IOscCalcAdjustable *& calc, const double deltaCP);
 void SetOscCalc_Throw_NO(osc::IOscCalcAdjustable *& calc, const double deltaCP);
 void SetOscCalc_CentralValue_IO(osc::IOscCalcAdjustable *& calc, const double deltaCP);
@@ -47,7 +47,10 @@ int GetBin(TH1D * hist, double value);
 
 std::default_random_engine generator;
 
-void deltaCPResolution_statisticalOnly()
+bool MAKE_THROWS = false;
+bool N_THROWS = MAKE_THROWS ? 200 : 1;
+
+void sensitivityFit()
 {
   std::cout << "Reading caf files..." << std::endl;
 
@@ -62,23 +65,26 @@ void deltaCPResolution_statisticalOnly()
 
   const double pot = 3.5 * 1.47e21 * 40/1.13;
 
-  TFile * outputFile = new TFile("/dune/data/users/imawby/standardCAF/IZZLEResolutionPlots_NO.root", "CREATE");
+  TFile * outputFile = new TFile("/dune/data/users/imawby/standardCAF/IZZLESensitivityPlots_NO.root", "CREATE");
 
   std::cout << "created output file" << std::endl;
 
-  int nTestCPValues(10);
-  unsigned int nThrows(500);
+  //int nTestCPValues(10);
+  //unsigned int nThrows(500);
+
+  int nTestCPValues(2);
+  unsigned int nThrows(2);
+
   float stepSizeCP((2.0 * TMath::Pi()) / static_cast<float>(nTestCPValues));
 
-  double meanResolutionValues[nTestCPValues], oneSigmaResolutionValues[nTestCPValues], twoSigmaResolutionValues[nTestCPValues], threeSigmaResolutionValues[nTestCPValues];
-  double testCPValues[nTestCPValues];
+  TTree * tree = new TTree("tree", "tree");
+  std::vector<std::vector<double>> chiSquaredValues(nTestCPValues);
+  std::vector<double> deltaCPValues(nTestCPValues);
 
   for (int j = 0; j < nTestCPValues; ++j)
   {
       const double trueDeltaCP(static_cast<float>(j) * stepSizeCP);
-
-      TH1D * bestFitDeltaCPValues = new TH1D(("bestFitDeltaCPValues_" + std::to_string(trueDeltaCP)).c_str(), ("bestFitDeltaCPValues_" + std::to_string(trueDeltaCP)).c_str(), 
-          41, -0.025 * TMath::Pi(), 2.025 * TMath::Pi());
+      deltaCPValues[j] = trueDeltaCP;
 
       for (unsigned int i = 0; i < nThrows; ++i)
       {
@@ -87,138 +93,75 @@ void deltaCPResolution_statisticalOnly()
 
           // Make oscillation throw 
           osc::IOscCalcAdjustable* calc = DefaultOscCalc();
-          SetOscCalc_Throw_NO(calc, trueDeltaCP);
+          MAKE_THROWS ? SetOscCalc_Throw_NO(calc, trueDeltaCP) : SetOscCalc_CentralValue_NO(calc, trueDeltaCP);
 
           // Make the mock data for trueDeltaCP value
+          // No statistical fluctuations
+          const Spectrum nueFluctuations_FHC = predNue_FHC_IZZLE.Predict(calc).AsimovData(pot);
+          const Spectrum numuFluctuations_FHC = predNumu_FHC_IZZLE.Predict(calc).AsimovData(pot);
+          const Spectrum nueFluctuations_RHC = predNue_RHC_IZZLE.Predict(calc).AsimovData(pot);
+          const Spectrum numuFluctuations_RHC = predNumu_RHC_IZZLE.Predict(calc).AsimovData(pot);
+
+          // Apply statistical fluctuations
+          /*
           const Spectrum nueFluctuations_FHC = predNue_FHC_IZZLE.Predict(calc).MockData(pot);
           const Spectrum numuFluctuations_FHC = predNumu_FHC_IZZLE.Predict(calc).MockData(pot);
           const Spectrum nueFluctuations_RHC = predNue_RHC_IZZLE.Predict(calc).MockData(pot);
           const Spectrum numuFluctuations_RHC = predNumu_RHC_IZZLE.Predict(calc).MockData(pot);
+          */
 
           // Create an experiment object to compare predictions to my data
           SingleSampleExperiment nueExperiment_FHC(&predNue_FHC_IZZLE, nueFluctuations_FHC);
           SingleSampleExperiment numuExperiment_FHC(&predNumu_FHC_IZZLE, numuFluctuations_FHC);
           SingleSampleExperiment nueExperiment_RHC(&predNue_RHC_IZZLE, nueFluctuations_RHC);
           SingleSampleExperiment numuExperiment_RHC(&predNumu_RHC_IZZLE, numuFluctuations_RHC);
-          MultiExperiment multiExperiment({&nueExperiment_FHC, &numuExperiment_FHC, &nueExperiment_RHC, &numuExperiment_RHC});
+          //MultiExperiment multiExperiment({&nueExperiment_FHC, &numuExperiment_FHC, &nueExperiment_RHC, &numuExperiment_RHC});
+          MultiExperiment multiExperiment({&nueExperiment_FHC, &numuExperiment_FHC});
 
           // Make several fits to avoid falling into the wrong minima (find the best deltaCP)
           osc::IOscCalcAdjustable* fitCalc = DefaultOscCalc();
-          double bestChiSquared(std::numeric_limits<float>::max()), bestDeltaCP(999);
+          double bestChiSquaredCPC(std::numeric_limits<float>::max());
+          double bestChiSquaredCPV(std::numeric_limits<float>::max());
 
-          PerformFit(fitCalc, multiExperiment, 0.0 * TMath::Pi(), true, bestDeltaCP, bestChiSquared);
-          PerformFit(fitCalc, multiExperiment, 0.0 * TMath::Pi(), false, bestDeltaCP, bestChiSquared);
+          // CPC Fits
+          PerformFit(fitCalc, multiExperiment, 0.0 * TMath::Pi(), true, bestChiSquaredCPC, true);
+          PerformFit(fitCalc, multiExperiment, 0.0 * TMath::Pi(), false, bestChiSquaredCPC, true);
 
-          PerformFit(fitCalc, multiExperiment, 0.5 * TMath::Pi(), true, bestDeltaCP, bestChiSquared);
-          PerformFit(fitCalc, multiExperiment, 0.5 * TMath::Pi(), false, bestDeltaCP, bestChiSquared);
+          PerformFit(fitCalc, multiExperiment, 1.0 * TMath::Pi(), true, bestChiSquaredCPC, true);
+          PerformFit(fitCalc, multiExperiment, 1.0 * TMath::Pi(), false, bestChiSquaredCPC, true);
 
-          PerformFit(fitCalc, multiExperiment, 1.0 * TMath::Pi(), true, bestDeltaCP, bestChiSquared);
-          PerformFit(fitCalc, multiExperiment, 1.0 * TMath::Pi(), false, bestDeltaCP, bestChiSquared);
+          PerformFit(fitCalc, multiExperiment, 2.0 * TMath::Pi(), true, bestChiSquaredCPC, true);
+          PerformFit(fitCalc, multiExperiment, 2.0 * TMath::Pi(), false, bestChiSquaredCPC, true);
 
-          PerformFit(fitCalc, multiExperiment, 1.5 * TMath::Pi(), true, bestDeltaCP, bestChiSquared);
-          PerformFit(fitCalc, multiExperiment, 1.5 * TMath::Pi(), false, bestDeltaCP, bestChiSquared);
+          // CPV Fits
+          PerformFit(fitCalc, multiExperiment, 0.0 * TMath::Pi(), true, bestChiSquaredCPV, false);
+          PerformFit(fitCalc, multiExperiment, 0.0 * TMath::Pi(), false, bestChiSquaredCPV, false);
 
-          PerformFit(fitCalc, multiExperiment, 2.0 * TMath::Pi(), true, bestDeltaCP, bestChiSquared);
-          PerformFit(fitCalc, multiExperiment, 2.0 * TMath::Pi(), false, bestDeltaCP, bestChiSquared);
+          PerformFit(fitCalc, multiExperiment, 1.0 * TMath::Pi(), true, bestChiSquaredCPV, false);
+          PerformFit(fitCalc, multiExperiment, 1.0 * TMath::Pi(), false, bestChiSquaredCPV, false);
 
-          bestFitDeltaCPValues->Fill(bestDeltaCP);
+          PerformFit(fitCalc, multiExperiment, 2.0 * TMath::Pi(), true, bestChiSquaredCPV, false);
+          PerformFit(fitCalc, multiExperiment, 2.0 * TMath::Pi(), false, bestChiSquaredCPV, false);
 
-          /*
-          std::cout << "///////////////////////////////" << std::endl;
-          std::cout << "i: " << i << std::endl;
-          std::cout << "True DeltaCP: " << trueDeltaCP << std::endl;
-          std::cout << "Best DeltaCP: " << bestDeltaCP << std::endl;
-          std::cout << "///////////////////////////////" << std::endl;
-          */
+          const float chiSquaredDifference(bestChiSquaredCPC - bestChiSquaredCPV);
+
+          std::cout << "////////////////////////////" << std::endl;
+          std::cout << "trueDeltaCP: " << (trueDeltaCP * 180 / 3.14) << std::endl;
+          std::cout << "bestChiSquaredCPC: " << bestChiSquaredCPC << std::endl;
+          std::cout << "bestChiSquaredCPV: " << bestChiSquaredCPV << std::endl;
+          std::cout << "chiSquaredDifference: " << chiSquaredDifference << std::endl;
+          std::cout << "significance: " << TMath::Sqrt(chiSquaredDifference) << std::endl;
+          std::cout << "////////////////////////////" << std::endl;
+
+          chiSquaredValues[j].push_back(bestChiSquaredCPC);
       }
 
-      // Now need to shift histogram so i can fit a gaussian to a periodic function
-
-      double bestEntries(-9999);
-      double bestCentre(9999);
-
-      for (int i = 1; i <= bestFitDeltaCPValues->GetNbinsX(); ++i)
-      {
-          const double binContent(bestFitDeltaCPValues->GetBinContent(i));
-          if (binContent > bestEntries)
-          {
-              bestEntries = binContent;
-              bestCentre = bestFitDeltaCPValues->GetBinCenter(i);
-          }
-      }
-
-      const double min(bestCentre - (1.025 * TMath::Pi()));
-      const double max(bestCentre + (1.025 * TMath::Pi()));
-
-      TH1D * shiftedDeltaCPValues = new TH1D(("shiftedDeltaCPValues_" + std::to_string(trueDeltaCP)).c_str(), ("shiftedDeltaCPValues_" + std::to_string(trueDeltaCP)).c_str(), 
-          41, min, max);
-
-      for (int i = 1; i <= bestFitDeltaCPValues->GetNbinsX(); ++i)
-      {
-          const float binCenter(bestFitDeltaCPValues->GetBinCenter(i));
-          const float binContent(bestFitDeltaCPValues->GetBinContent(i));
-
-          if (binContent < std::numeric_limits<float>::epsilon())
-              continue;
-
-          const double separation(binCenter - bestCentre);
-          int shiftedBin(GetBin(shiftedDeltaCPValues, binCenter));
-
-          if (std::fabs(separation) > TMath::Pi())
-          {
-              if (separation > 0.0)
-              {
-                  double jam = binCenter - (2.0 * TMath::Pi());
-                  shiftedBin = GetBin(shiftedDeltaCPValues, jam);
-              }
-              else
-              {
-                  double jam = binCenter + (2.0 * TMath::Pi());
-                  shiftedBin = GetBin(shiftedDeltaCPValues, jam);
-              }
-          }
-
-          shiftedDeltaCPValues->SetBinContent(shiftedBin, binContent);
-      }
-
-      shiftedDeltaCPValues->Scale(1.0 / shiftedDeltaCPValues->Integral());
-
-      // now fit a gaussian!!! 
-      TF1 * gaussianFit = new TF1(("gaussianFit_" + std::to_string(j)).c_str() , "(1.0/([0]*sqrt(2.0*3.14))) * exp(-0.5 * ((x - [1])/ [0])^2)", min, max);
-      gaussianFit->SetParameter(1, bestCentre);
-      shiftedDeltaCPValues->Fit(("gaussianFit_" + std::to_string(j)).c_str());
-
-      float mean = gaussianFit->GetParameter(1);
-      float standardDeviation = gaussianFit->GetParameter(0);
-
-      bestFitDeltaCPValues->Write(("bestFitDeltaCPValues_" + std::to_string(j)).c_str());
-      shiftedDeltaCPValues->Write(("shiftedDeltaCPValues_" + std::to_string(j)).c_str());
-      gaussianFit->Write(("gaussianFit" + std::to_string(j)).c_str());
-
-      testCPValues[j] = (trueDeltaCP * 180.0) / TMath::Pi();
-
-      float resolution = std::min(std::fabs(mean - trueDeltaCP), std::fabs(mean - (trueDeltaCP + (2.0 * TMath::Pi()))));
-
-      // convert to degrees because i am dumb
-
-      standardDeviation *= (180.0 / TMath::Pi());
-      resolution *= (180.0 / TMath::Pi());
-
-      meanResolutionValues[j] = resolution;
-      oneSigmaResolutionValues[j] = resolution + (standardDeviation);
-      twoSigmaResolutionValues[j] = resolution + (2.0 * standardDeviation);
-      threeSigmaResolutionValues[j] = resolution + (3.0 * standardDeviation);
+      tree->Branch(("chiSquaredValues_" + std::to_string(j)).c_str(), &chiSquaredValues[j]);
+      tree->Branch(("deltaCPValues_" + std::to_string(j)).c_str(), &deltaCPValues[j]);  
   }
 
-  TGraph * meanResolutionGraph = new TGraph(nTestCPValues, testCPValues, meanResolutionValues);
-  TGraph * oneSigmaResolutionGraph = new TGraph(nTestCPValues, testCPValues, oneSigmaResolutionValues);
-  TGraph * twoSigmaResolutionGraph = new TGraph(nTestCPValues, testCPValues, twoSigmaResolutionValues);
-  TGraph * threeSigmaResolutionGraph = new TGraph(nTestCPValues, testCPValues, threeSigmaResolutionValues);
-
-  meanResolutionGraph->Write("meanResolutionGraph");
-  oneSigmaResolutionGraph->Write("oneSigmaResolutionGraph");
-  twoSigmaResolutionGraph->Write("twoSigmaResolutionGraph");
-  threeSigmaResolutionGraph->Write("threeSigmaResolutionGraph");
+  tree->Fill();
+  outputFile->WriteObject(tree, "tree");    
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -307,34 +250,34 @@ void SetOscCalc_Throw_IO(osc::IOscCalcAdjustable *& calc, const double deltaCP)
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-
-void PerformFit(osc::IOscCalcAdjustable *& calc, MultiExperiment &experiment,
-  const double deltaCPSeed, const bool isLowerOctant, double &bestDeltaCP, double &bestChiSquared)
+void PerformFit(osc::IOscCalcAdjustable *& calc, MultiExperiment &experiment, const double deltaCPSeed, const bool isLowerOctant, double &bestChiSquared, bool fitCPC)
 {
   SetOscCalc_CentralValue_NO(calc, deltaCPSeed);
 
-  double deltaCP(9999), chiSquared(9999);
+  double chiSquared(9999);
+
+  std::vector<const IFitVar *> fitVariables = {&kFitDmSq32NHScaled};
+
+  isLowerOctant ? fitVariables.push_back(&kFitSinSqTheta23LowerOctant) : fitVariables.push_back(&kFitSinSqTheta23UpperOctant);
+
+  if (!fitCPC)
+      fitVariables.push_back(&kFitDeltaInPiUnits);
 
   if (isLowerOctant)
   {
       calc->SetTh23(0.735);
-      MinuitFitter fit(&experiment, {&kFitDmSq32NHScaled, &kFitSinSqTheta23LowerOctant, &kFitDeltaInPiUnits});
+      MinuitFitter fit(&experiment, fitVariables);
       chiSquared = fit.Fit(calc)->EvalMetricVal();
-      deltaCP = calc->GetdCP();
   }
   else
   {
       calc->SetTh23(0.835);
-      MinuitFitter fit(&experiment, {&kFitDmSq32NHScaled, &kFitSinSqTheta23UpperOctant, &kFitDeltaInPiUnits});
+      MinuitFitter fit(&experiment, fitVariables);
       chiSquared = fit.Fit(calc)->EvalMetricVal();
-      deltaCP = calc->GetdCP();
   }
 
    if (chiSquared < bestChiSquared)
-   {
        bestChiSquared = chiSquared;
-       bestDeltaCP = deltaCP;
-   }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////

@@ -47,22 +47,22 @@ int GetBin(TH1D * hist, double value);
 
 std::default_random_engine generator;
 
-void deltaCPResolution_statisticalOnly()
+void deltaCPResolution_statisticalOnly_CVN()
 {
   std::cout << "Reading caf files..." << std::endl;
 
   TFile * inputFile = TFile::Open(INPUT_FILE_NAME.c_str());
 
-  PredictionNoExtrap& predNue_FHC_IZZLE = *ana::LoadFrom<PredictionNoExtrap>(inputFile, "predNue_FHC_IZZLE").release();
-  PredictionNoExtrap& predNumu_FHC_IZZLE = *ana::LoadFrom<PredictionNoExtrap>(inputFile, "predNumu_FHC_IZZLE").release();
-  PredictionNoExtrap& predNue_RHC_IZZLE = *ana::LoadFrom<PredictionNoExtrap>(inputFile, "predNue_RHC_IZZLE").release();
-  PredictionNoExtrap& predNumu_RHC_IZZLE = *ana::LoadFrom<PredictionNoExtrap>(inputFile, "predNumu_RHC_IZZLE").release();
+  PredictionNoExtrap& predNue_FHC_CVN = *ana::LoadFrom<PredictionNoExtrap>(inputFile, "predNue_FHC_CVN").release();
+  PredictionNoExtrap& predNumu_FHC_CVN = *ana::LoadFrom<PredictionNoExtrap>(inputFile, "predNumu_FHC_CVN").release();
+  PredictionNoExtrap& predNue_RHC_CVN = *ana::LoadFrom<PredictionNoExtrap>(inputFile, "predNue_RHC_CVN").release();
+  PredictionNoExtrap& predNumu_RHC_CVN = *ana::LoadFrom<PredictionNoExtrap>(inputFile, "predNumu_RHC_CVN").release();
 
   inputFile->Close();
 
   const double pot = 3.5 * 1.47e21 * 40/1.13;
 
-  TFile * outputFile = new TFile("/dune/data/users/imawby/standardCAF/IZZLEResolutionPlots_NO.root", "CREATE");
+  TFile * outputFile = new TFile("/dune/data/users/imawby/standardCAF/CVNResolutionPlots_NO.root", "CREATE");
 
   std::cout << "created output file" << std::endl;
 
@@ -90,16 +90,17 @@ void deltaCPResolution_statisticalOnly()
           SetOscCalc_Throw_NO(calc, trueDeltaCP);
 
           // Make the mock data for trueDeltaCP value
-          const Spectrum nueFluctuations_FHC = predNue_FHC_IZZLE.Predict(calc).MockData(pot);
-          const Spectrum numuFluctuations_FHC = predNumu_FHC_IZZLE.Predict(calc).MockData(pot);
-          const Spectrum nueFluctuations_RHC = predNue_RHC_IZZLE.Predict(calc).MockData(pot);
-          const Spectrum numuFluctuations_RHC = predNumu_RHC_IZZLE.Predict(calc).MockData(pot);
+          const Spectrum nueFluctuations_FHC = predNue_FHC_CVN.Predict(calc).MockData(pot);
+          const Spectrum numuFluctuations_FHC = predNumu_FHC_CVN.Predict(calc).MockData(pot);
+          const Spectrum nueFluctuations_RHC = predNue_RHC_CVN.Predict(calc).MockData(pot);
+          const Spectrum numuFluctuations_RHC = predNumu_RHC_CVN.Predict(calc).MockData(pot);
 
           // Create an experiment object to compare predictions to my data
-          SingleSampleExperiment nueExperiment_FHC(&predNue_FHC_IZZLE, nueFluctuations_FHC);
-          SingleSampleExperiment numuExperiment_FHC(&predNumu_FHC_IZZLE, numuFluctuations_FHC);
-          SingleSampleExperiment nueExperiment_RHC(&predNue_RHC_IZZLE, nueFluctuations_RHC);
-          SingleSampleExperiment numuExperiment_RHC(&predNumu_RHC_IZZLE, numuFluctuations_RHC);
+          SingleSampleExperiment nueExperiment_FHC(&predNue_FHC_CVN, nueFluctuations_FHC);
+          SingleSampleExperiment numuExperiment_FHC(&predNumu_FHC_CVN, numuFluctuations_FHC);
+          SingleSampleExperiment nueExperiment_RHC(&predNue_RHC_CVN, nueFluctuations_RHC);
+          SingleSampleExperiment numuExperiment_RHC(&predNumu_RHC_CVN, numuFluctuations_RHC);
+
           MultiExperiment multiExperiment({&nueExperiment_FHC, &numuExperiment_FHC, &nueExperiment_RHC, &numuExperiment_RHC});
 
           // Make several fits to avoid falling into the wrong minima (find the best deltaCP)
@@ -306,7 +307,6 @@ void SetOscCalc_Throw_IO(osc::IOscCalcAdjustable *& calc, const double deltaCP)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
-
 
 void PerformFit(osc::IOscCalcAdjustable *& calc, MultiExperiment &experiment,
   const double deltaCPSeed, const bool isLowerOctant, double &bestDeltaCP, double &bestChiSquared)
