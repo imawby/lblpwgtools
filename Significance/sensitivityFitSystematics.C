@@ -36,7 +36,7 @@
 
 using namespace ana;
 
-const std::string INPUT_FILE_NAME = "/dune/data/users/imawby/standardCAF/StateFilesSystematics.root";
+const std::string INPUT_FILE_NAME = "/dune/data/users/imawby/standardCAF/StateFilesDetectorSystematics.root";
 
 void PerformFit(MultiExperiment &experiment, std::vector<const ISyst*> &systematics, const double deltaCPSeed, const bool isLowerOctant, bool fitCPC, double &bestChiSquared);
 std::vector<Spectrum> Get_Thrown_NO(std::vector<const PredictionInterp*> &predictionGenerators, const double deltaCP, const float pot);
@@ -50,8 +50,10 @@ int GetBin(TH1D * hist, double value);
 
 std::default_random_engine generator;
 
+int N_TEST_DELTA_CP_VALUES = 2; // 10
 bool MAKE_THROWS = false;
-bool N_THROWS = MAKE_THROWS ? 200 : 1;
+int N_THROWS = MAKE_THROWS ? 200 : 1; // 500
+bool FIT_SYSTEMATICS = false;
 
 void sensitivityFitSystematics()
 {
@@ -71,18 +73,15 @@ void sensitivityFitSystematics()
   const double pot = 3.5 * 1.47e21 * 40/1.13;
 
   TFile * outputFile = new TFile("/dune/data/users/imawby/standardCAF/IZZLESensitivityPlotsSystematics_NO.root", "CREATE");
-
   std::cout << "created output file" << std::endl;
 
-  //int nTestCPValues(10);
-  //unsigned int nThrows(500);
 
-  int nTestCPValues(2);
+  // Evaluate each test value
+  int nTestCPValues(N_TEST_DELTA_CP_VALUES);
   unsigned int nThrows(N_THROWS);
   float stepSizeCP((2.0 * TMath::Pi()) / static_cast<float>(nTestCPValues));
 
   TTree * tree = new TTree("tree", "tree");
-
   std::vector<std::vector<double>> chiSquaredValues(nTestCPValues);
   std::vector<double> deltaCPValues(nTestCPValues);
 
@@ -101,11 +100,11 @@ void sensitivityFitSystematics()
 
           // Turn into an experiment
           MultiExperiment multiExperiment;
-          for (unsigned int i = 0; i < predictionGenerators.size(); ++i)
-          {
-              const SingleSampleExperiment experiment(predictionGenerators[i], predictionVector[i]);
+          //for (unsigned int i = 0; i < predictionGenerators.size(); ++i)
+          // {
+              const SingleSampleExperiment experiment(predictionGenerators[1], predictionVector[1]);
               multiExperiment.Add(&experiment);
-          }
+              //}
 
           // Add in reactor constraint
           // The arguments are the central value and uncertainty
@@ -181,6 +180,7 @@ std::vector<Spectrum> Get_Thrown_NO(std::vector<const PredictionInterp*> &predic
     std::map<const ISyst*, double> systematicShiftMap;
     std::vector<ISyst const *> systematics(predictionGenerators.front()->GetAllSysts());
 
+    // So, shifts have limits.. i'm pretty sure SystShifts will roll back to the boundary if we cross it
     for (const ISyst * const systematic : systematics)
         systematicShiftMap[systematic] = gRandom->Gaus();
 
@@ -287,14 +287,14 @@ void SetOscCalc_Throw_IO(osc::IOscCalcAdjustable *& calc, const double deltaCP)
 void PerformFit(MultiExperiment &experiment, std::vector<const ISyst*> &systematics, const double deltaCPSeed, const bool isLowerOctant, bool fitCPC, double &bestChiSquared)
 {
   // Define the fit variables
-  std::vector<const IFitVar *> fitVariables = {&kFitDmSq32NHScaled};
+    std::vector<const IFitVar *> fitVariables = {&kFitDmSq32NHScaled, &kFitSinSq2Theta12, &kFitDmSq21, &kFitRho, &kFitTheta13};
 
   isLowerOctant ? fitVariables.push_back(&kFitSinSqTheta23LowerOctant) : fitVariables.push_back(&kFitSinSqTheta23UpperOctant);
 
   if (!fitCPC)
       fitVariables.push_back(&kFitDeltaInPiUnits);
 
-  /* this is a longer list
+  /* this is a longer list of things i should be fitting
   std::vector<const IFitVar*> oscVars =
       {&kFitDmSq32Scaled, &kFitSinSqTheta23,
        &kFitSinSq2Theta12, &kFitDmSq21,
@@ -310,8 +310,19 @@ void PerformFit(MultiExperiment &experiment, std::vector<const ISyst*> &systemat
   else
       calc->SetTh23(0.835);
 
-  MinuitFitter fit(&experiment, fitVariables);//, systematics);
-  const float chiSquared(fit.Fit(calc)->EvalMetricVal());
+
+  float chiSquared(std::numeric_limits<float>::max());
+
+  if (FIT_SYSTEMATICS)
+  {
+      MinuitFitter fit(&experiment, fitVariables, systematics);
+      chiSquared = fit.Fit(calc)->EvalMetricVal();
+  }
+  else
+  {
+      MinuitFitter fit(&experiment, fitVariables);
+      chiSquared = fit.Fit(calc)->EvalMetricVal();
+  }
 
    if (chiSquared < bestChiSquared)
        bestChiSquared = chiSquared;

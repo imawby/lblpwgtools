@@ -32,7 +32,7 @@
 
 using namespace ana;
 
-const std::string outputFileName = "/dune/data/users/imawby/standardCAF/StateFilesSystematics.root";
+const std::string outputFileName = "/dune/data/users/imawby/standardCAF/StateFilesDetectorSystematics.root";
 
 void statisticalFluctuationStateFileProductionSystematics();
 
@@ -69,12 +69,24 @@ void statisticalFluctuationStateFileProductionSystematics()
 
   const double pot = 3.5 * 1.47e21 * 40/1.13;
 
-  std::vector<ana::ISyst const *> systematicsVector = GetListOfSysts("none");
+  /*
+  std::vector<const ISyst *> GetListOfSysts(bool fluxsyst_Nov17, bool xsecsyst,
+                                            bool detsyst, bool useND, bool useFD,
+                                            bool useNueOnE, bool useFakeDataDials,
+                                            bool fluxsyst_CDR, int NFluxSysts,
+                                            bool removeFDNonFitDials) 
+  */
+
+  // Only detector systematics
+  std::vector<ana::ISyst const *> systematicsVector = GetListOfSysts(false, false, true, false, true, false, false, false);
 
   for (ana::ISyst const * sys : systematicsVector)
   {
       std::cout << "ShortName: " << sys->ShortName() << std::endl;
       std::cout << "CentralValue: " << sys->Central() << std::endl;
+      std::cout << "Min: " << sys->Min() << std::endl;
+      std::cout << "Max: " << sys->Max() << std::endl;
+      std::cout << "Apply shift: " << sys->ApplyPenalty() << std::endl;
   }
 
   osc::IOscCalcAdjustable* calc = DefaultOscCalc();
