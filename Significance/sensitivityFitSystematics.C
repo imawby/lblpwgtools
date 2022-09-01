@@ -19,6 +19,7 @@
 // New includes for this macro
 #include "CAFAna/Experiment/SingleSampleExperiment.h"
 #include "CAFAna/Prediction/PredictionNoExtrap.h"
+#include "CAFAna/Prediction/PredictionInterp.h"
 #include "CAFAna/Analysis/Calcs.h"
 #include "OscLib/OscCalcPMNSOpt.h"
 #include "CAFAna/Fit/MinuitFitter.h"
@@ -26,6 +27,8 @@
 #include "CAFAna/Experiment/MultiExperiment.h"
 #include "CAFAna/Experiment/ReactorExperiment.h"
 #include "CAFAna/Prediction/PredictionInterp.h"
+#include "CAFAna/Systs/AnaSysts.h"
+#include "CAFAna/Core/Loaders.h"
 
 #include "TF1.h"
 #include "Math/WrappedTF1.h"
@@ -36,10 +39,13 @@
 
 using namespace ana;
 
-const std::string INPUT_FILE_NAME = "/dune/data/users/imawby/standardCAF/StateFilesDetectorSystematics.root";
+const std::string INPUT_FILE_NAME = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/StateFilesDetectorSystematics.root";
+
+void sensitivityFitSystematics(std::string &mode);
 
 void PerformFit(MultiExperiment &experiment, std::vector<const ISyst*> &systematics, const double deltaCPSeed, const bool isLowerOctant, bool fitCPC, double &bestChiSquared);
 std::vector<Spectrum> Get_Thrown_NO(std::vector<const PredictionInterp*> &predictionGenerators, const double deltaCP, const float pot);
+std::vector<Spectrum> Get_DetectorSys_NO(std::vector<const PredictionInterp*> &predictionGenerators, std::vector<std::string> &systematicsToShift, const float sigmaShift, const double deltaCP, const float pot);
 Spectrum Get_CentralValue_NO(const PredictionInterp &predictionGenerator, const double deltaCP, const float pot);
 void SetOscCalc_Throw_NO(osc::IOscCalcAdjustable *& calc, const double deltaCP);
 void SetOscCalc_CentralValue_NO(osc::IOscCalcAdjustable *& calc, const double deltaCP);
@@ -50,31 +56,101 @@ int GetBin(TH1D * hist, double value);
 
 std::default_random_engine generator;
 
-int N_TEST_DELTA_CP_VALUES = 2; // 10
+int N_TEST_DELTA_CP_VALUES = 100; // 10
 bool MAKE_THROWS = false;
 int N_THROWS = MAKE_THROWS ? 200 : 1; // 500
 bool FIT_SYSTEMATICS = false;
 
-void sensitivityFitSystematics()
+void sensitivityFitSystematics(int mode, float sigmaShift)
 {
+
+  std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESensitivityPlotsSystematics_NO.root";
+  vector<std::string> systematicsToShift;
+
+  if (mode == 0)
+  {
+    std::cout << "All energy systematics" << std::endl;
+    systematicsToShift = {
+    "EnergyScaleFD", "UncorrFDTotSqrt", "UncorrFDTotInvSqrt", 
+    "ChargedHadUncorrFD", "UncorrFDHadSqrt", "UncorrFDHadInvSqrt", "ChargedHadResFD",
+    "EScaleMuLArFD", "UncorrFDMuSqrt", "UncorrFDMuInvSqrt", "MuonResFD",
+    "NUncorrFD", "UncorrFDNSqrt", "UncorrFDNInvSqrt", "NResFD",
+    "EMUncorrFD", "UncorrFDEMSqrt", "UncorrFDEMInvSqrt", "EMResFD"};
+
+    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESensitivityPlotsAllEnergySystematics" + std::to_string(sigmaShift) + "SigmaShift_NO.root";
+  }
+  else if (mode == 1)
+  {
+    std::cout << "Total energy scale and charged hadron systematics" << std::endl;
+
+    systematicsToShift = {
+    "EnergyScaleFD", "UncorrFDTotSqrt", "UncorrFDTotInvSqrt", 
+    "ChargedHadUncorrFD", "UncorrFDHadSqrt", "UncorrFDHadInvSqrt", "ChargedHadResFD"};
+
+    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESensitivityPlotsChargedHadronEnergySystematics" + std::to_string(sigmaShift) + "SigmaShift_NO.root";
+  }
+  else if (mode == 2)
+  {
+    std::cout << "Total energy scale and muon systematics" << std::endl;
+
+    systematicsToShift = {
+    "EnergyScaleFD", "UncorrFDTotSqrt", "UncorrFDTotInvSqrt", 
+    "EScaleMuLArFD", "UncorrFDMuSqrt", "UncorrFDMuInvSqrt", "MuonResFD"};
+
+    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESensitivityPlotsMuonEnergySystematics" + std::to_string(sigmaShift) + "SigmaShift_NO.root";
+  }
+  else if (mode == 3)
+  {
+    std::cout << "Total energy scale and neutron systematics" << std::endl;
+
+    systematicsToShift = {
+      "EnergyScaleFD", "UncorrFDTotSqrt", "UncorrFDTotInvSqrt",
+      "NUncorrFD", "UncorrFDNSqrt", "UncorrFDNInvSqrt", "NResFD"};
+
+    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESensitivityPlotsNeutronEnergySystematics" + std::to_string(sigmaShift) + "SigmaShift_NO.root";
+  }
+  else if (mode == 4)
+  {
+    std::cout << "Total energy scale and EM systematics" << std::endl;
+
+    systematicsToShift = {
+      "EnergyScaleFD", "UncorrFDTotSqrt", "UncorrFDTotInvSqrt"
+      "EMUncorrFD", "UncorrFDEMSqrt", "UncorrFDEMInvSqrt", "EMResFD"};
+
+    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESensitivityPlotsEMEnergySystematics" + std::to_string(sigmaShift) + "SigmaShift_NO.root";
+  }
+  else if (mode == 5)
+  {
+    std::cout << "reconstruction model systematics" << std::endl;
+    systematicsToShift = {"FDRecoNumuSyst", "FDRecoNueSyst"};
+
+    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESensitivityPlotsRecoModelSystematics" + std::to_string(sigmaShift) + "SigmaShift_NO.root";
+  }
+  else
+  {
+    std::cout << "will apply no systematics shifts" << std::endl;
+  }
+
+  std::cout << "With " << sigmaShift << " sigma shift" << std::endl;
+
+
   std::cout << "Reading caf files..." << std::endl;
 
   TFile * inputFile = TFile::Open(INPUT_FILE_NAME.c_str());
 
   PredictionInterp& interpGenNue_FHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_FHC_IZZLE").release();
-  //PredictionInterp& interpGenNue_RHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_RHC_IZZLE").release();
-  //PredictionInterp& interpGenNumu_FHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_FHC_IZZLE").release();
-  //PredictionInterp& interpGenNumu_RHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_RHC_IZZLE").release();
+  PredictionInterp& interpGenNue_RHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_RHC_IZZLE").release();
+  PredictionInterp& interpGenNumu_FHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_FHC_IZZLE").release();
+  PredictionInterp& interpGenNumu_RHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_RHC_IZZLE").release();
 
-  std::vector<const PredictionInterp*> predictionGenerators = {&interpGenNue_FHC_IZZLE}; //, &interpGenNue_RHC_IZZLE, &interpGenNumu_FHC_IZZLE, &interpGenNumu_RHC_IZZLE};
+  std::vector<const PredictionInterp*> predictionGenerators = {&interpGenNue_FHC_IZZLE, &interpGenNue_RHC_IZZLE, &interpGenNumu_FHC_IZZLE, &interpGenNumu_RHC_IZZLE};
 
   inputFile->Close();
 
   const double pot = 3.5 * 1.47e21 * 40/1.13;
 
-  TFile * outputFile = new TFile("/dune/data/users/imawby/standardCAF/IZZLESensitivityPlotsSystematics_NO.root", "CREATE");
+  TFile * outputFile = new TFile(outputFileName.c_str(), "CREATE");
   std::cout << "created output file" << std::endl;
-
 
   // Evaluate each test value
   int nTestCPValues(N_TEST_DELTA_CP_VALUES);
@@ -82,29 +158,43 @@ void sensitivityFitSystematics()
   float stepSizeCP((2.0 * TMath::Pi()) / static_cast<float>(nTestCPValues));
 
   TTree * tree = new TTree("tree", "tree");
-  std::vector<std::vector<double>> chiSquaredValues(nTestCPValues);
-  std::vector<double> deltaCPValues(nTestCPValues);
+  std::vector<double> chiSquaredCPCValues;
+  std::vector<double> chiSquaredCPVValues;
+  std::vector<double> chiSquaredValues;
+  std::vector<double> deltaCPValues;
 
   for (int j = 0; j < nTestCPValues; ++j)
   {
       const double trueDeltaCP(static_cast<float>(j) * stepSizeCP);
-      deltaCPValues[j] = trueDeltaCP;
+      deltaCPValues.push_back(trueDeltaCP);
 
       for (unsigned int i = 0; i < nThrows; ++i)
       {
-          std::cout << "iteration: " << std::to_string(j) << "/" << std::to_string(nTestCPValues) << std::endl;
-          std::cout << "nThrow: " << std::to_string(i) << "/" << std::to_string(nThrows) << std::endl;
+          std::cout << "iteration: " << std::to_string(j + 1) << "/" << std::to_string(nTestCPValues) << std::endl;
+          std::cout << "nThrow: " << std::to_string(i + 1) << "/" << std::to_string(nThrows) << std::endl;
 
           // Get the prediction
-          std::vector<Spectrum> predictionVector(Get_Thrown_NO(predictionGenerators, trueDeltaCP, pot));
+          std::vector<Spectrum> predictionVector;
 
-          // Turn into an experiment
+	  if (MAKE_THROWS)
+	  {
+	    predictionVector = Get_Thrown_NO(predictionGenerators, trueDeltaCP, pot);
+	  }
+	  else
+	  {
+	    predictionVector = Get_DetectorSys_NO(predictionGenerators, systematicsToShift, sigmaShift, trueDeltaCP, pot);
+	  }
+
+          // Turn into an experiment (I tried to be fancy and it didn't work, leave me alone)
           MultiExperiment multiExperiment;
-          //for (unsigned int i = 0; i < predictionGenerators.size(); ++i)
-          // {
-              const SingleSampleExperiment experiment(predictionGenerators[1], predictionVector[1]);
-              multiExperiment.Add(&experiment);
-              //}
+          const SingleSampleExperiment experimentNueFHC(predictionGenerators[0], predictionVector[0]);
+          const SingleSampleExperiment experimentNueRHC(predictionGenerators[1], predictionVector[1]);
+          const SingleSampleExperiment experimentNumuFHC(predictionGenerators[2], predictionVector[2]);
+          const SingleSampleExperiment experimentNumuRHC(predictionGenerators[3], predictionVector[3]);
+          multiExperiment.Add(&experimentNueFHC);
+          multiExperiment.Add(&experimentNueRHC);
+          multiExperiment.Add(&experimentNumuFHC);
+          multiExperiment.Add(&experimentNumuRHC);
 
           // Add in reactor constraint
           // The arguments are the central value and uncertainty
@@ -142,14 +232,18 @@ void sensitivityFitSystematics()
           std::cout << "bestChiSquaredCPC: " << bestChiSquaredCPC << std::endl;
           std::cout << "bestChiSquaredCPV: " << bestChiSquaredCPV << std::endl;
           std::cout << "chiSquaredDifference: " << chiSquaredDifference << std::endl;
-          std::cout << "significance: " << TMath::Sqrt(chiSquaredDifference) << std::endl;
+          std::cout << "significance: " << TMath::Sqrt(std::fabs(chiSquaredDifference)) << std::endl;
           std::cout << "////////////////////////////" << std::endl;
 
-          chiSquaredValues[j].push_back(bestChiSquaredCPC);
+	  chiSquaredCPCValues.push_back(bestChiSquaredCPC);
+	  chiSquaredCPVValues.push_back(bestChiSquaredCPV);
+          chiSquaredValues.push_back(chiSquaredDifference);
       }
 
-      tree->Branch(("chiSquaredValues_" + std::to_string(j)).c_str(), &chiSquaredValues[j]);
-      tree->Branch(("deltaCPValues_" + std::to_string(j)).c_str(), &deltaCPValues[j]);  
+      tree->Branch("chiSquaredCPCValues" , &chiSquaredCPCValues);
+      tree->Branch("chiSquaredCPVValues", &chiSquaredCPVValues);
+      tree->Branch("chiSquaredValues", &chiSquaredValues);
+      tree->Branch("deltaCPValues", &deltaCPValues);  
   }
 
   tree->Fill();
@@ -201,6 +295,49 @@ std::vector<Spectrum> Get_Thrown_NO(std::vector<const PredictionInterp*> &predic
 
     return predictionVector;
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
+std::vector<Spectrum> Get_DetectorSys_NO(std::vector<const PredictionInterp*> &predictionGenerators, std::vector<std::string> &systematicsToShift, const float sigmaShift, const double deltaCP, const float pot)
+{
+    // Make systematic throws
+    std::map<const ISyst*, double> systematicShiftMap;
+    std::vector<ISyst const *> systematics(predictionGenerators.front()->GetAllSysts());
+
+    // So, shifts have limits.. i'm pretty sure SystShifts will roll back to the boundary if we cross it
+    for (const ISyst * const systematic : systematics)
+    {
+      std::string shortName(systematic->ShortName());
+
+      for (std::string &sysToShiftName : systematicsToShift)
+      {
+          if (shortName == sysToShiftName)
+          {
+	      std::cout << "yoy yo" << std::endl;
+              std::cout << "ShortName: " << systematic->ShortName() << std::endl;
+	      systematicShiftMap[systematic] = sigmaShift;
+	  }
+      }
+    }
+
+    const SystShifts systematicShifts(systematicShiftMap);
+
+    // Make oscillation throw
+    osc::IOscCalcAdjustable* calc = DefaultOscCalc();
+    SetOscCalc_CentralValue_NO(calc, deltaCP);
+
+    // Create experiments
+    std::vector<Spectrum> predictionVector;
+
+    for (const PredictionInterp *const predictionGenerator : predictionGenerators)
+    {
+        const Spectrum prediction(predictionGenerator->PredictSyst(calc, systematicShifts).AsimovData(pot));
+        predictionVector.push_back(prediction);
+    }
+
+    return predictionVector;
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 

@@ -9,7 +9,6 @@ set(scripts_to_install
   mh_joint.C
   octant_joint.C
   spec_variations.C
-  /dune/app/users/imawby/lblpwgtools/Resolution/deltaCPResolution_statisticalOnly.C
 )
 
 set(scripts_to_build
