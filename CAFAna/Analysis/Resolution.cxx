@@ -6,8 +6,9 @@
 
 namespace ana
 {
-  Resolution::Resolution(MinuitFitter myfit, osc::IOscCalcAdjustable* testOsc, int which)
-    : fmyfit(myfit), ftestOsc(testOsc), fwhich(which) {}
+    Resolution::Resolution(MinuitFitter * myfit, osc::IOscCalcAdjustable* testOsc, int which, double bestChiSquared)
+        : fmyfit(myfit), ftestOsc(testOsc), fwhich(which), fBestChiSquared(bestChiSquared) {}
+
   double Resolution::FitResult(double *thisparam, double*dummy) {
     if (fwhich == 0) {
       ftestOsc->SetdCP(*thisparam);
@@ -25,8 +26,8 @@ namespace ana
       ftestOsc->SetDmsq32(*thisparam);
       std::cout << "Dmsq inside resolution function: " << ftestOsc->GetDmsq32() << std::endl;
     }
-
     
-    return fmyfit.Fit(ftestOsc, IFitter::kQuiet)->EvalMetricVal() - 1.0;
+    //return fmyfit->Fit(ftestOsc, IFitter::kQuiet)->EvalMetricVal() - 1.0;
+    return fmyfit->Fit(ftestOsc)->EvalMetricVal() - fBestChiSquared - 1.0;
   }
 }

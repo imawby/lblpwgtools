@@ -73,8 +73,12 @@ void SpectrumLoader::Go() {
   for (const Cut &cut : cuts)
     fAllCuts.push_back(cut);
 
+  std::cout << "AAAAAA" << std::endl;
+
   fLivetimeByCut.resize(fAllCuts.size());
   fPOTByCut.resize(fAllCuts.size());
+
+  std::cout << "BBBBBB" << std::endl;
 
   const int Nfiles = NFiles();
 
@@ -137,7 +141,15 @@ void SpectrumLoader::HandleFile(TFile *f, Progress *prog) {
   // In files with both "caf" and "cafTree", "cafTree" is the correct
   // version. "caf" is ROOT's temporary save while the file is being produced
   // and may be incomplete.
-  tr = (TTree*)f->Get("cafTree");
+
+  std::cout << "\033[31m" << "READING TREE " << "\033[0m"  << std::endl;
+
+  //tr = (TTree*)f->Get("cafTree");
+  tr = (TTree*)f->Get("cafmaker/caf");
+
+  if (tr)
+    std::cout << "cafTree Entries: " << tr->GetEntries() << std::endl;
+
   if (!tr){
     // Old (MCC10 era) files only have "caf"
     tr = (TTree*)f->Get("caf");
@@ -156,6 +168,8 @@ void SpectrumLoader::HandleFile(TFile *f, Progress *prog) {
   SetBranchChecked(tr, "mvaresult", &sr.mvaresult);
   SetBranchChecked(tr, "mvanue", &sr.mvanue);
   SetBranchChecked(tr, "mvanumu", &sr.mvanumu);
+  SetBranchChecked(tr, "SelTrackPandizzleScore", &sr.selTrackPandizzleScore);
+  SetBranchChecked(tr, "SelShowerPandrizzleScore", &sr.selShowerPandrizzleScore);
   SetBranchChecked(tr, "cvnnue", &sr.cvnnue);
   SetBranchChecked(tr, "cvnnumu", &sr.cvnnumu);
   SetBranchChecked(tr, "numu_pid", &sr.numu_pid);

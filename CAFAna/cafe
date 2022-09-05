@@ -137,16 +137,20 @@ if __name__ == '__main__':
     if opts['snapshot']:
         os.environ['CAFANA_USE_SNAPSHOTS'] = 'yes'
 
-    path = [os.environ['CAFANA']+'/include',
-            os.environ['CAFANACORE_INC'],
-            os.environ['ROOTSYS']+'/include',
-            os.environ['STAN_INC'],
-            os.environ['STAN_MATH_INC'],
-            os.environ['EIGEN_INC'],
-            os.environ['SUNDIALS_INC'],
-            os.environ['OSCLIB_INC'],
-            os.environ['TBB_INC']]
 
+    # Take manual control of $ROOT_INCLUDE_PATH so we can decide what is and
+    # isn't accesssible. TODO this list seems a bit minimal...
+    os.environ['ROOT_INCLUDE_PATH'] = ':'.join(
+        [os.environ['CAFANA']+'/include',
+         os.environ['CAFANACORE_INC'],
+         os.environ['ROOTSYS']+'/include',
+         os.environ['BOOST_INC'],
+         os.environ['STAN_INC'],
+         os.environ['STAN_MATH_INC'],
+         os.environ['EIGEN_INC'],
+         os.environ['SUNDIALS_INC'],
+         os.environ['OSCLIB_INC']
+     ])
 
 
     d = tempfile.TemporaryDirectory('', 'cafana_'+getpass.getuser()+'_'+datetime.datetime.now().strftime('%Y%m%d_%H%M%S')+'_')
