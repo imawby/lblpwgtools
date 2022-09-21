@@ -23,6 +23,7 @@
 #include "CAFAna/Experiment/MultiExperiment.h"
 #include "CAFAna/Systs/AnaSysts.h"
 #include "CAFAna/Core/Loaders.h"
+#include "CAFAna/Systs/DUNEFluxSysts.h"
 
 #include "TF1.h"
 #include "Math/WrappedTF1.h"
@@ -32,7 +33,9 @@
 
 using namespace ana;
 
-const std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/StateFilesDetectorSystematics.root";
+const std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/StateFilesFluxSystematicsSplitBySign.root";
+//const std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/StateFilesFluxSystematicsSplitBySign.root";
+//const std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/StateFilesEnergySystematicsSplitBySign.root";
 
 void statisticalFluctuationStateFileProductionSystematics();
 
@@ -76,8 +79,14 @@ void statisticalFluctuationStateFileProductionSystematics()
                                             bool removeFDNonFitDials) 
   */
 
-  // Only detector systematics
-  std::vector<ana::ISyst const *> systematicsVector = GetListOfSysts(false, false, true, false, true, false, false, false);
+  // Only flux systematics
+  std::vector<ana::ISyst const *> systematicsVector = GetListOfSysts(true, false, false, false, true, false, true, false, 30, false);
+
+  // Only xsec systematics
+  //std::vector<ana::ISyst const *> systematicsVector = GetListOfSysts(false, true, false, false, true, false, true, false, 0, false);
+
+  // Only energy systematics
+  //std::vector<ana::ISyst const *> systematicsVector = GetListOfSysts(false, false, true, false, true, false, true, false, 0, false);
 
   for (ana::ISyst const * sys : systematicsVector)
   {
@@ -89,15 +98,56 @@ void statisticalFluctuationStateFileProductionSystematics()
   }
 
   osc::IOscCalcAdjustable* calc = DefaultOscCalc();
+
   NoExtrapPredictionGenerator genNue_FHC_IZZLE(axNueEnergy, kIsNueSelectedFHC, kUnweighted);
   NoExtrapPredictionGenerator genNue_RHC_IZZLE(axNueEnergy, kIsNueSelectedRHC, kUnweighted);
   NoExtrapPredictionGenerator genNumu_FHC_IZZLE(axNumuEnergy, kIsNumuSelectedFHC, kUnweighted);
   NoExtrapPredictionGenerator genNumu_RHC_IZZLE(axNumuEnergy, kIsNumuSelectedRHC, kUnweighted);
 
+  const Cut kIsTrueNue([](const caf::SRProxy* sr)
+  {
+      return sr->isCC && abs(sr->nuPDGunosc) == 14 && abs(sr->nuPDG) == 12 && sr->nuPDG > 0;
+  });
+
+  const Cut kIsTrueAnue([](const caf::SRProxy* sr)
+  {
+      return sr->isCC && abs(sr->nuPDGunosc) == 14 && abs(sr->nuPDG) == 12 && sr->nuPDG < 0;
+  });
+
+  const Cut kIsTrueNumu([](const caf::SRProxy* sr)
+  {
+      return sr->isCC && abs(sr->nuPDGunosc) == 14 && abs(sr->nuPDG) == 14 && sr->nuPDG > 0;
+  });
+
+  const Cut kIsTrueAnumu([](const caf::SRProxy* sr)
+  {
+      return sr->isCC && abs(sr->nuPDGunosc) == 14 && abs(sr->nuPDG) == 14 && sr->nuPDG < 0;
+  });
+
+  NoExtrapPredictionGenerator genNue_FHC_TRUE(axNueEnergy, kIsTrueNue, kUnweighted);
+  NoExtrapPredictionGenerator genNue_RHC_TRUE(axNueEnergy, kIsTrueAnue, kUnweighted);
+  NoExtrapPredictionGenerator genNumu_FHC_TRUE(axNumuEnergy, kIsTrueNumu, kUnweighted);
+  NoExtrapPredictionGenerator genNumu_RHC_TRUE(axNumuEnergy, kIsTrueAnumu, kUnweighted);
+
+  NoExtrapPredictionGenerator genNue_FHC_CVN(axNueEnergy, kPassFD_CVN_NUE, kUnweighted);
+  NoExtrapPredictionGenerator genNue_RHC_CVN(axNueEnergy, kPassFD_CVN_NUE, kUnweighted);
+  NoExtrapPredictionGenerator genNumu_FHC_CVN(axNumuEnergy, kPassFD_CVN_NUMU, kUnweighted);
+  NoExtrapPredictionGenerator genNumu_RHC_CVN(axNumuEnergy, kPassFD_CVN_NUMU, kUnweighted);
+
   PredictionInterp interpGenNue_FHC_IZZLE(systematicsVector, calc, genNue_FHC_IZZLE, loadersFHC, kNoShift, PredictionInterp::kCombineSigns);
-  PredictionInterp interpGenNue_RHC_IZZLE(systematicsVector, calc, genNue_RHC_IZZLE, loadersRHC, kNoShift, PredictionInterp::kCombineSigns);
+  PredictionInterp interpGenNue_RHC_IZZLE(systematicsVector, calc, genNue_RHC_IZZLE, loadersRHC, kNoShift, PredictionInterp::kSplitBySign);
   PredictionInterp interpGenNumu_FHC_IZZLE(systematicsVector, calc, genNumu_FHC_IZZLE, loadersFHC, kNoShift, PredictionInterp::kCombineSigns);
-  PredictionInterp interpGenNumu_RHC_IZZLE(systematicsVector, calc, genNumu_RHC_IZZLE, loadersRHC, kNoShift, PredictionInterp::kCombineSigns);
+  PredictionInterp interpGenNumu_RHC_IZZLE(systematicsVector, calc, genNumu_RHC_IZZLE, loadersRHC, kNoShift, PredictionInterp::kSplitBySign);
+
+  PredictionInterp interpGenNue_FHC_TRUE(systematicsVector, calc, genNue_FHC_TRUE, loadersFHC, kNoShift, PredictionInterp::kCombineSigns);
+  PredictionInterp interpGenNue_RHC_TRUE(systematicsVector, calc, genNue_RHC_TRUE, loadersRHC, kNoShift, PredictionInterp::kSplitBySign);
+  PredictionInterp interpGenNumu_FHC_TRUE(systematicsVector, calc, genNumu_FHC_TRUE, loadersFHC, kNoShift, PredictionInterp::kCombineSigns);
+  PredictionInterp interpGenNumu_RHC_TRUE(systematicsVector, calc, genNumu_RHC_TRUE, loadersRHC, kNoShift, PredictionInterp::kSplitBySign);
+
+  PredictionInterp interpGenNue_FHC_CVN(systematicsVector, calc, genNue_FHC_CVN, loadersFHC, kNoShift, PredictionInterp::kCombineSigns);
+  PredictionInterp interpGenNue_RHC_CVN(systematicsVector, calc, genNue_RHC_CVN, loadersRHC, kNoShift, PredictionInterp::kSplitBySign);
+  PredictionInterp interpGenNumu_FHC_CVN(systematicsVector, calc, genNumu_FHC_CVN, loadersFHC, kNoShift, PredictionInterp::kCombineSigns);
+  PredictionInterp interpGenNumu_RHC_CVN(systematicsVector, calc, genNumu_RHC_CVN, loadersRHC, kNoShift, PredictionInterp::kSplitBySign);
 
   std::cout << "Filling spectra..." << std::endl;
   loadersFHC.Go();
@@ -110,6 +160,16 @@ void statisticalFluctuationStateFileProductionSystematics()
   interpGenNue_RHC_IZZLE.SaveTo(outputFile, "interpGenNue_RHC_IZZLE");
   interpGenNumu_FHC_IZZLE.SaveTo(outputFile, "interpGenNumu_FHC_IZZLE");
   interpGenNumu_RHC_IZZLE.SaveTo(outputFile, "interpGenNumu_RHC_IZZLE");
+
+  interpGenNue_FHC_TRUE.SaveTo(outputFile, "interpGenNue_FHC_TRUE");
+  interpGenNue_RHC_TRUE.SaveTo(outputFile, "interpGenNue_RHC_TRUE");
+  interpGenNumu_FHC_TRUE.SaveTo(outputFile, "interpGenNumu_FHC_TRUE");
+  interpGenNumu_RHC_TRUE.SaveTo(outputFile, "interpGenNumu_RHC_TRUE");
+
+  interpGenNue_FHC_CVN.SaveTo(outputFile, "interpGenNue_FHC_CVN");
+  interpGenNue_RHC_CVN.SaveTo(outputFile, "interpGenNue_RHC_CVN");
+  interpGenNumu_FHC_CVN.SaveTo(outputFile, "interpGenNumu_FHC_CVN");
+  interpGenNumu_RHC_CVN.SaveTo(outputFile, "interpGenNumu_RHC_CVN");
 
   std::cout << "All done making state files..." << std::endl;
 }

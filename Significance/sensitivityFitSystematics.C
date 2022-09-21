@@ -30,6 +30,7 @@
 #include "CAFAna/Prediction/PredictionInterp.h"
 #include "CAFAna/Systs/AnaSysts.h"
 #include "CAFAna/Core/Loaders.h"
+#include "CAFAna/Core/LoadFromFile.h"
 
 #include "TF1.h"
 #include "Math/WrappedTF1.h"
@@ -40,12 +41,12 @@
 
 using namespace ana;
 
-const std::string INPUT_FILE_NAME = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/StateFilesDetectorSystematics.root";
+const std::string INPUT_FILE_NAME = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/StateFilesDetectorSystematicsSplitBySign.root";
 
 void sensitivityFitSystematics(std::string &systematicsMode);
 
 void PerformFit(std::vector<const PredictionInterp*> &predictionGenerators, const std::vector<Spectrum> &predictionVector, const double deltaCPSeed, 
-		const bool isHigherOctant, const bool isPositiveHierarchy, bool fitCPC, double &bestChiSquared, std::map<std::string, float> &bestFitPosition);
+  const bool isHigherOctant, const bool isPositiveHierarchy, bool fitCPC, double &bestChiSquared, std::map<std::string, float> &bestFitPosition);
 std::vector<Spectrum> Get_Thrown_NO(std::vector<const PredictionInterp*> &predictionGenerators, const double deltaCP, const float pot);
 std::vector<Spectrum> Get_DetectorSys_NO(std::vector<const PredictionInterp*> &predictionGenerators, std::vector<std::string> &systematicsToShift, const float sigmaShift, const double deltaCP, const float pot);
 Spectrum Get_CentralValue_NO(const PredictionInterp &predictionGenerator, const double deltaCP, const float pot);
@@ -65,9 +66,11 @@ bool FIT_SYSTEMATICS = false;
 
 void sensitivityFitSystematics(int systematicsMode, float sigmaShift)
 {
-  std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESensitivityPlotsSystematics_NO.root";
+  //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESensitivityPlotsSystematics_NO_SplitBySign.root";
 
-  vector<std::string> systematicsToShift;
+std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESpectraPlotsSystematics_NO_SplitBySign_MPIO2.root";
+
+  std::vector<std::string> systematicsToShift;
   if (systematicsMode == 0)
   {
     std::cout << "All energy systematics" << std::endl;
@@ -78,7 +81,7 @@ void sensitivityFitSystematics(int systematicsMode, float sigmaShift)
     "NUncorrFD", "UncorrFDNSqrt", "UncorrFDNInvSqrt", "NResFD",
     "EMUncorrFD", "UncorrFDEMSqrt", "UncorrFDEMInvSqrt", "EMResFD"};
 
-    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESensitivityPlotsAllEnergySystematics" + std::to_string(sigmaShift) + "SigmaShift_NO.root";
+    //outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESensitivityPlotsAllEnergySystematics" + std::to_string(sigmaShift) + "SigmaShift_NO_SplitBySign.root";
   }
   else if (systematicsMode == 1)
   {
@@ -88,7 +91,7 @@ void sensitivityFitSystematics(int systematicsMode, float sigmaShift)
     "EnergyScaleFD", "UncorrFDTotSqrt", "UncorrFDTotInvSqrt", 
     "ChargedHadUncorrFD", "UncorrFDHadSqrt", "UncorrFDHadInvSqrt", "ChargedHadResFD"};
 
-    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESensitivityPlotsChargedHadronEnergySystematics" + std::to_string(sigmaShift) + "SigmaShift_NO.root";
+    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESensitivityPlotsChargedHadronEnergySystematics" + std::to_string(sigmaShift) + "SigmaShift_NO_SplitBySign.root";
   }
   else if (systematicsMode == 2)
   {
@@ -98,7 +101,7 @@ void sensitivityFitSystematics(int systematicsMode, float sigmaShift)
     "EnergyScaleFD", "UncorrFDTotSqrt", "UncorrFDTotInvSqrt", 
     "EScaleMuLArFD", "UncorrFDMuSqrt", "UncorrFDMuInvSqrt", "MuonResFD"};
 
-    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESensitivityPlotsMuonEnergySystematics" + std::to_string(sigmaShift) + "SigmaShift_NO.root";
+    //outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESensitivityPlotsMuonEnergySystematics" + std::to_string(sigmaShift) + "SigmaShift_NO_SplitBySign.root";
   }
   else if (systematicsMode == 3)
   {
@@ -108,7 +111,7 @@ void sensitivityFitSystematics(int systematicsMode, float sigmaShift)
       "EnergyScaleFD", "UncorrFDTotSqrt", "UncorrFDTotInvSqrt",
       "NUncorrFD", "UncorrFDNSqrt", "UncorrFDNInvSqrt", "NResFD"};
 
-    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESensitivityPlotsNeutronEnergySystematics" + std::to_string(sigmaShift) + "SigmaShift_NO.root";
+    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESensitivityPlotsNeutronEnergySystematics" + std::to_string(sigmaShift) + "SigmaShift_NO_SplitBySign.root";
   }
   else if (systematicsMode == 4)
   {
@@ -118,15 +121,24 @@ void sensitivityFitSystematics(int systematicsMode, float sigmaShift)
       "EnergyScaleFD", "UncorrFDTotSqrt", "UncorrFDTotInvSqrt"
       "EMUncorrFD", "UncorrFDEMSqrt", "UncorrFDEMInvSqrt", "EMResFD"};
 
-    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESensitivityPlotsEMEnergySystematics" + std::to_string(sigmaShift) + "SigmaShift_NO.root";
+    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESensitivityPlotsEMEnergySystematics" + std::to_string(sigmaShift) + "SigmaShift_NO_SplitBySign.root";
   }
   else if (systematicsMode == 5)
   {
     std::cout << "reconstruction model systematics" << std::endl;
     systematicsToShift = {"FDRecoNumuSyst", "FDRecoNueSyst"};
 
-    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESensitivityPlotsRecoModelSystematics" + std::to_string(sigmaShift) + "SigmaShift_NO.root";
+    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESensitivityPlotsRecoModelSystematics" + std::to_string(sigmaShift) + "SigmaShift_NO_SplitBySign.root";
   }
+  else if (systematicsMode == 6)
+  {
+    std::cout << "Total energy systematics" << std::endl;
+    systematicsToShift = {
+      "EnergyScaleFD", "UncorrFDTotSqrt", "UncorrFDTotInvSqrt"};
+
+    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESensitivityPlotsTotalEnergySystematics" + std::to_string(sigmaShift) + "SigmaShift_NO_SplitBySign.root";
+  }
+
   else
   {
     std::cout << "will apply no systematics shifts" << std::endl;
@@ -143,7 +155,14 @@ void sensitivityFitSystematics(int systematicsMode, float sigmaShift)
   PredictionInterp& interpGenNumu_FHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_FHC_IZZLE").release();
   PredictionInterp& interpGenNumu_RHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_RHC_IZZLE").release();
 
+  PredictionInterp& interpGenNue_FHC_TRUE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_FHC_TRUE").release();
+  PredictionInterp& interpGenNue_RHC_TRUE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_RHC_TRUE").release();
+  PredictionInterp& interpGenNumu_FHC_TRUE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_FHC_TRUE").release();
+  PredictionInterp& interpGenNumu_RHC_TRUE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_RHC_TRUE").release();
+
   std::vector<const PredictionInterp*> predictionGenerators = {&interpGenNue_FHC_IZZLE, &interpGenNue_RHC_IZZLE, &interpGenNumu_FHC_IZZLE, &interpGenNumu_RHC_IZZLE};
+
+  std::vector<const PredictionInterp*> predictionGenerators_TRUE = {&interpGenNue_FHC_TRUE, &interpGenNue_RHC_TRUE, &interpGenNumu_FHC_TRUE, &interpGenNumu_RHC_TRUE};
 
   inputFile->Close();
 
@@ -181,7 +200,11 @@ void sensitivityFitSystematics(int systematicsMode, float sigmaShift)
 
   for (int j = 0; j < nTestCPValues; ++j)
   {
-      const double trueDeltaCP(static_cast<float>(j) * stepSizeCP);
+    std::cout << "IZZIE CHANGE THIS" << std::endl;
+    //const double trueDeltaCP(static_cast<float>(j) * stepSizeCP);
+
+      const double trueDeltaCP(1.5 * 3.14);
+
       deltaCPValues.push_back(trueDeltaCP);
 
       for (unsigned int i = 0; i < nThrows; ++i)
@@ -191,6 +214,9 @@ void sensitivityFitSystematics(int systematicsMode, float sigmaShift)
 
           // Get the prediction
           std::vector<Spectrum> predictionVector;
+          std::vector<Spectrum> predictionVector_M1;
+          std::vector<Spectrum> predictionVector_1;
+          std::vector<Spectrum> predictionVector_True;
 
 	  if (MAKE_THROWS)
 	  {
@@ -198,8 +224,34 @@ void sensitivityFitSystematics(int systematicsMode, float sigmaShift)
 	  }
 	  else
 	  {
-	    predictionVector = Get_DetectorSys_NO(predictionGenerators, systematicsToShift, sigmaShift, trueDeltaCP, pot);
+	    //predictionVector = Get_DetectorSys_NO(predictionGenerators, systematicsToShift, sigmaShift, trueDeltaCP, pot);
+	    predictionVector = Get_DetectorSys_NO(predictionGenerators, systematicsToShift, 0, trueDeltaCP, pot);
+	    predictionVector_M1 = Get_DetectorSys_NO(predictionGenerators, systematicsToShift, -1, trueDeltaCP, pot);
+	    predictionVector_1 = Get_DetectorSys_NO(predictionGenerators, systematicsToShift, 1, trueDeltaCP, pot);
+	    predictionVector_True = Get_DetectorSys_NO(predictionGenerators_TRUE, systematicsToShift, 0, trueDeltaCP, pot);
 	  }
+
+	  predictionVector[0].ToTH1(pot)->Write("nue_0");
+	  predictionVector[1].ToTH1(pot)->Write("anue_0");
+	  predictionVector[2].ToTH1(pot)->Write("numu_0");
+	  predictionVector[3].ToTH1(pot)->Write("anumu_0");
+
+	  predictionVector_M1[0].ToTH1(pot)->Write("nue_M1");
+	  predictionVector_M1[1].ToTH1(pot)->Write("anue_M1");
+	  predictionVector_M1[2].ToTH1(pot)->Write("numu_M1");
+	  predictionVector_M1[3].ToTH1(pot)->Write("anumu_M1");
+
+	  predictionVector_1[0].ToTH1(pot)->Write("nue_1");
+	  predictionVector_1[1].ToTH1(pot)->Write("anue_1");
+	  predictionVector_1[2].ToTH1(pot)->Write("numu_1");
+	  predictionVector_1[3].ToTH1(pot)->Write("anumu_1");
+
+	  predictionVector_True[0].ToTH1(pot)->Write("nue_True");
+	  predictionVector_True[1].ToTH1(pot)->Write("anue_True");
+	  predictionVector_True[2].ToTH1(pot)->Write("numu_True");
+	  predictionVector_True[3].ToTH1(pot)->Write("anumu_True");
+
+	  return;
 
           // Add in reactor constraint
           // The arguments are the central value and uncertainty
@@ -246,10 +298,20 @@ void sensitivityFitSystematics(int systematicsMode, float sigmaShift)
           PerformFit(predictionGenerators, predictionVector, 0.0 * TMath::Pi(), false, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
           PerformFit(predictionGenerators, predictionVector, 0.0 * TMath::Pi(), false, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
 
+          PerformFit(predictionGenerators, predictionVector, 0.5 * TMath::Pi(), true, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
+          PerformFit(predictionGenerators, predictionVector, 0.5 * TMath::Pi(), true, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
+          PerformFit(predictionGenerators, predictionVector, 0.5 * TMath::Pi(), false, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
+          PerformFit(predictionGenerators, predictionVector, 0.5 * TMath::Pi(), false, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
+
           PerformFit(predictionGenerators, predictionVector, 1.0 * TMath::Pi(), true, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
           PerformFit(predictionGenerators, predictionVector, 1.0 * TMath::Pi(), true, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
           PerformFit(predictionGenerators, predictionVector, 1.0 * TMath::Pi(), false, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
           PerformFit(predictionGenerators, predictionVector, 1.0 * TMath::Pi(), false, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
+
+          PerformFit(predictionGenerators, predictionVector, 1.5 * TMath::Pi(), true, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
+          PerformFit(predictionGenerators, predictionVector, 1.5 * TMath::Pi(), true, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
+          PerformFit(predictionGenerators, predictionVector, 1.5 * TMath::Pi(), false, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
+          PerformFit(predictionGenerators, predictionVector, 1.5 * TMath::Pi(), false, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
 
           PerformFit(predictionGenerators, predictionVector, 2.0 * TMath::Pi(), true, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
           PerformFit(predictionGenerators, predictionVector, 2.0 * TMath::Pi(), true, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
@@ -353,7 +415,7 @@ std::vector<Spectrum> Get_Thrown_NO(std::vector<const PredictionInterp*> &predic
 
     // Make oscillation throw
     osc::IOscCalcAdjustable* calc = DefaultOscCalc();
-    SetOscCalc_Throw_NO(calc, deltaCP);
+    //SetOscCalc_Throw_NO(calc, deltaCP);
 
     // Create experiments
     std::vector<Spectrum> predictionVector;
@@ -414,7 +476,7 @@ std::vector<Spectrum> Get_DetectorSys_NO(std::vector<const PredictionInterp*> &p
 Spectrum Get_CentralValue_NO(const PredictionInterp &predictionGenerator, const double deltaCP, const float pot)
 {
     osc::IOscCalcAdjustable* calc = DefaultOscCalc();
-    SetOscCalc_CentralValue_NO(calc, deltaCP);
+    //SetOscCalc_CentralValue_NO(calc, deltaCP);
 
     const Spectrum prediction = predictionGenerator.Predict(calc).FakeData(pot); 
 
