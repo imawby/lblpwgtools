@@ -42,6 +42,15 @@ namespace caf
 
     double selTrackPandizzleScore;
     double selShowerPandrizzleScore;
+    double selShowerJamPandrizzleScore;
+    double nuePandrizzleCut;
+    double nueJamPandrizzleCut;
+    double nuePandizzleCut;
+    double numuPandizzleCut;
+    double anuePandrizzleCut;
+    double anueJamPandrizzleCut;
+    double anuePandizzleCut;
+    double anumuPandizzleCut;
 
     double RecoLepEnNue;
     double RecoHadEnNue;
@@ -119,6 +128,10 @@ namespace caf
     double vtx_x;
     double vtx_y;
     double vtx_z;
+
+    double recoVertex_x;
+    double recoVertex_y;
+    double recoVertex_z;
 
     // Near detector offset in m
     double det_x;

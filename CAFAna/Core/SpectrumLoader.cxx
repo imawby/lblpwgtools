@@ -170,6 +170,15 @@ void SpectrumLoader::HandleFile(TFile *f, Progress *prog) {
   SetBranchChecked(tr, "mvanumu", &sr.mvanumu);
   SetBranchChecked(tr, "SelTrackPandizzleScore", &sr.selTrackPandizzleScore);
   SetBranchChecked(tr, "SelShowerPandrizzleScore", &sr.selShowerPandrizzleScore);
+  SetBranchChecked(tr, "SelShowerJamPandrizzleScore", &sr.selShowerJamPandrizzleScore);
+  SetBranchChecked(tr, "NuePandrizzleCut", &sr.nuePandrizzleCut);
+  SetBranchChecked(tr, "NuePandizzleCut", &sr.nuePandizzleCut);
+  SetBranchChecked(tr, "NueJamPandrizzleCut", &sr.nueJamPandrizzleCut);
+  SetBranchChecked(tr, "NumuPandizzleCut", &sr.numuPandizzleCut);
+  SetBranchChecked(tr, "AnuePandrizzleCut", &sr.anuePandrizzleCut);
+  SetBranchChecked(tr, "AnuePandizzleCut", &sr.anuePandizzleCut);
+  SetBranchChecked(tr, "AnueJamPandrizzleCut", &sr.anueJamPandrizzleCut);
+  SetBranchChecked(tr, "AnumuPandizzleCut", &sr.anumuPandizzleCut);
   SetBranchChecked(tr, "cvnnue", &sr.cvnnue);
   SetBranchChecked(tr, "cvnnumu", &sr.cvnnumu);
   SetBranchChecked(tr, "numu_pid", &sr.numu_pid);
@@ -230,6 +239,10 @@ void SpectrumLoader::HandleFile(TFile *f, Progress *prog) {
   SetBranchChecked(tr, "vtx_x", &sr.vtx_x);
   SetBranchChecked(tr, "vtx_y", &sr.vtx_y);
   SetBranchChecked(tr, "vtx_z", &sr.vtx_z);
+
+  SetBranchChecked(tr, "RecoVertex_x", &sr.recoVertex_x);
+  SetBranchChecked(tr, "RecoVertex_y", &sr.recoVertex_y);
+  SetBranchChecked(tr, "RecoVertex_z", &sr.recoVertex_z);
 
   SetBranchChecked(tr, "det_x", &sr.det_x);
 

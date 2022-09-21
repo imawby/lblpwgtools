@@ -13,13 +13,13 @@ namespace ana
         const double minY(-600.0 + 50.0), maxY(600.0 - 50.0);
         const double minZ(50.0), maxZ(1394.0 - 150.0);
 
-        if ((sr->vtx_x < minX) || (sr->vtx_x > maxX))
+        if ((sr->recoVertex_x < minX) || (sr->recoVertex_x > maxX))
             return false;
 
-        if ((sr->vtx_y < minY) || (sr->vtx_y > maxY))
+        if ((sr->recoVertex_y < minY) || (sr->recoVertex_y > maxY))
             return false;
 
-        if ((sr->vtx_z < minZ) || (sr->vtx_z > maxZ))
+        if ((sr->recoVertex_z < minZ) || (sr->recoVertex_z > maxZ))
             return false;
 
         return true;
@@ -64,12 +64,12 @@ namespace ana
     inline bool PassNueSelectionFHC(const caf::SRProxy* sr)
     {
         if (!IsInFV(sr))
+	  return false;
+
+        if (sr->selTrackPandizzleScore > sr->nuePandizzleCut)
             return false;
 
-        if (sr->selTrackPandizzleScore > 0.712)
-            return false;
-
-        if (sr->selShowerPandrizzleScore < 0.418)
+        if ((sr->selShowerPandrizzleScore < sr->nuePandrizzleCut) && (sr->selShowerJamPandrizzleScore < sr->nueJamPandrizzleCut))
             return false;
 
         return true;
@@ -80,7 +80,7 @@ namespace ana
         if (!IsInFV(sr))
             return false;
 
-        if (sr->selTrackPandizzleScore < 0.34)
+        if (sr->selTrackPandizzleScore < sr->numuPandizzleCut)
             return false;
 
         return true;
@@ -89,12 +89,12 @@ namespace ana
     inline bool PassNueSelectionRHC(const caf::SRProxy* sr)
     {
         if (!IsInFV(sr))
+	  return false;
+
+        if (sr->selTrackPandizzleScore > sr->anuePandizzleCut)
             return false;
 
-        if (sr->selTrackPandizzleScore > 0.472)
-            return false;
-
-        if (sr->selShowerPandrizzleScore < 0.664)
+        if ((sr->selShowerPandrizzleScore < sr->anuePandrizzleCut) && (sr->selShowerJamPandrizzleScore < sr->anueJamPandrizzleCut))
             return false;
 
         return true;
@@ -105,7 +105,7 @@ namespace ana
         if (!IsInFV(sr))
             return false;
 
-        if (sr->selTrackPandizzleScore < 0.42)
+        if (sr->selTrackPandizzleScore < sr->anumuPandizzleCut)
             return false;
 
         return true;
