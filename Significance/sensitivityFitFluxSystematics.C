@@ -42,8 +42,7 @@
 
 using namespace ana;
 
-const std::string INPUT_FILE_NAME = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/StateFilesFluxSystematicsSplitBySignCVN.root";
-//const std::string INPUT_FILE_NAME = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/StateFilesFluxSystematicsSplitBySign.root";
+const std::string INPUT_FILE_NAME = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/StateFilesFluxSystematicsSplitBySign.root";
 
 void sensitivityFitFluxSystematics(float sigmaShift);
 
@@ -63,7 +62,7 @@ bool FIT_SYSTEMATICS = true;
 void sensitivityFitFluxSystematics()
 {
   //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESensitivityPlotsFluxSystematicThrows_NO_SplitBySign.root";
-  std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESensitivityPlotsNoSystematicsCVN_NO_SplitBySign.root";
+  std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/CVNSensitivityPlotsNoSystematics_NO_SplitBySign.root";
   //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESpectraPlotsSystematics_NO_SplitBySign_MPIO2.root";
 
   DUNEFluxSystVector systematicsVector = GetDUNEFluxSysts(30, true, false);

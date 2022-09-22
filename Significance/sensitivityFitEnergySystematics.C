@@ -63,7 +63,8 @@ bool FIT_SYSTEMATICS = true;
 void sensitivityFitEnergySystematics(int systematicsMode)
 {
   // Change fit to throws
-  std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESensitivityPlotsEnergySystematicFit_NO_SplitBySign.root";
+  //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESensitivityPlotsEnergySystematicFit_NO_SplitBySign.root";
+  std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/CVNSensitivityPlotsEnergySystematicFit_NO_SplitBySign.root";
   //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/";
   std::vector<std::string> systematicsToShift;
 
@@ -77,7 +78,8 @@ void sensitivityFitEnergySystematics(int systematicsMode)
     "NUncorrFD", "UncorrFDNSqrt", "UncorrFDNInvSqrt", "NResFD",
     "EMUncorrFD", "UncorrFDEMSqrt", "UncorrFDEMInvSqrt", "EMResFD"};
 
-    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/IZZLESensitivityPlotsAllEnergySystematicFit_NO_SplitBySign.root";
+    //outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/IZZLESensitivityPlotsAllEnergySystematicFit_NO_SplitBySign.root";
+    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/CVNPlotsAllEnergySystematicFit_NO_SplitBySign.root";
     //outputFileName += "allEnergy";
   }
   else if (systematicsMode == 1)
@@ -88,7 +90,8 @@ void sensitivityFitEnergySystematics(int systematicsMode)
     "EnergyScaleFD", "UncorrFDTotSqrt", "UncorrFDTotInvSqrt", 
     "ChargedHadUncorrFD", "UncorrFDHadSqrt", "UncorrFDHadInvSqrt", "ChargedHadResFD"};
 
-    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/IZZLESensitivityPlotsChargedHadronEnergySystematicFit_NO_SplitBySign.root";
+    //outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/IZZLESensitivityPlotsChargedHadronEnergySystematicFit_NO_SplitBySign.root";
+    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/CVNSensitivityPlotsChargedHadronEnergySystematicFit_NO_SplitBySign.root";
     //outputFileName += "chargedHadron";
   }
   else if (systematicsMode == 2)
@@ -99,7 +102,8 @@ void sensitivityFitEnergySystematics(int systematicsMode)
     "EnergyScaleFD", "UncorrFDTotSqrt", "UncorrFDTotInvSqrt", 
     "EScaleMuLArFD", "UncorrFDMuSqrt", "UncorrFDMuInvSqrt", "MuonResFD"};
 
-    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/IZZLESensitivityPlotsMuonEnergySystematicFit_NO_SplitBySign.root";
+    //outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/IZZLESensitivityPlotsMuonEnergySystematicFit_NO_SplitBySign.root";
+    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/CVNSensitivityPlotsMuonEnergySystematicFit_NO_SplitBySign.root";
     //outputFileName += "muon";
   }
   else if (systematicsMode == 3)
@@ -110,7 +114,8 @@ void sensitivityFitEnergySystematics(int systematicsMode)
       "EnergyScaleFD", "UncorrFDTotSqrt", "UncorrFDTotInvSqrt",
       "NUncorrFD", "UncorrFDNSqrt", "UncorrFDNInvSqrt", "NResFD"};
 
-    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/IZZLESensitivityPlotsNeutronEnergySystematicFit_NO_SplitBySign.root";
+    //outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/IZZLESensitivityPlotsNeutronEnergySystematicFit_NO_SplitBySign.root";
+    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/CVNSensitivityPlotsNeutronEnergySystematicFit_NO_SplitBySign.root";
     //outputFileName += "neutron";
   }
   else if (systematicsMode == 4)
@@ -121,7 +126,8 @@ void sensitivityFitEnergySystematics(int systematicsMode)
       "EnergyScaleFD", "UncorrFDTotSqrt", "UncorrFDTotInvSqrt"
       "EMUncorrFD", "UncorrFDEMSqrt", "UncorrFDEMInvSqrt", "EMResFD"};
 
-    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/IZZLESensitivityPlotsEMEnergySystematicFit_NO_SplitBySign.root";
+    //outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/IZZLESensitivityPlotsEMEnergySystematicFit_NO_SplitBySign.root";
+    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/CVNSensitivityPlotsEMEnergySystematicFit_NO_SplitBySign.root";
     //outputFileName += "EMShower";
   }
   else if (systematicsMode == 5)
@@ -129,7 +135,8 @@ void sensitivityFitEnergySystematics(int systematicsMode)
     std::cout << "reconstruction model systematics" << std::endl;
     systematicsToShift = {"FDRecoNumuSyst", "FDRecoNueSyst"};
 
-    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/IZZLESensitivityPlotsRecoModelSystematicFit_NO_SplitBySign.root";
+    //outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/IZZLESensitivityPlotsRecoModelSystematicFit_NO_SplitBySign.root";
+    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/CVNSensitivityPlotsRecoModelSystematicFit_NO_SplitBySign.root";
     //outputFileName += "recoModel";
   }
   else if (systematicsMode == 6)
@@ -138,7 +145,8 @@ void sensitivityFitEnergySystematics(int systematicsMode)
     systematicsToShift = {
       "EnergyScaleFD", "UncorrFDTotSqrt", "UncorrFDTotInvSqrt"};
 
-    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/IZZLESensitivityPlotsTotalEnergySystematicFit_NO_SplitBySign.root";
+    //outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/IZZLESensitivityPlotsTotalEnergySystematicFit_NO_SplitBySign.root";
+    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/CVNSensitivityPlotsTotalEnergySystematicFit_NO_SplitBySign.root";
     //outputFileName += "totalEnergy";
   }
   else
@@ -152,23 +160,23 @@ void sensitivityFitEnergySystematics(int systematicsMode)
 
   TFile * inputFile = TFile::Open(INPUT_FILE_NAME.c_str());
 
-  PredictionInterp& interpGenNue_FHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_FHC_IZZLE").release();
-  PredictionInterp& interpGenNue_RHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_RHC_IZZLE").release();
-  PredictionInterp& interpGenNumu_FHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_FHC_IZZLE").release();
-  PredictionInterp& interpGenNumu_RHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_RHC_IZZLE").release();
+  //PredictionInterp& interpGenNue_FHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_FHC_IZZLE").release();
+  //PredictionInterp& interpGenNue_RHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_RHC_IZZLE").release();
+  //PredictionInterp& interpGenNumu_FHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_FHC_IZZLE").release();
+  //PredictionInterp& interpGenNumu_RHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_RHC_IZZLE").release();
 
-  //PredictionInterp& interpGenNue_FHC_CVN = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_FHC_CVN").release();
-  //PredictionInterp& interpGenNue_RHC_CVN = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_RHC_CVN").release();
-  //PredictionInterp& interpGenNumu_FHC_CVN = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_FHC_CVN").release();
-  //PredictionInterp& interpGenNumu_RHC_CVN = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_RHC_CVN").release();
+  PredictionInterp& interpGenNue_FHC_CVN = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_FHC_CVN").release();
+  PredictionInterp& interpGenNue_RHC_CVN = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_RHC_CVN").release();
+  PredictionInterp& interpGenNumu_FHC_CVN = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_FHC_CVN").release();
+  PredictionInterp& interpGenNumu_RHC_CVN = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_RHC_CVN").release();
 
   //PredictionInterp& interpGenNue_FHC_TRUE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_FHC_TRUE").release();
   //PredictionInterp& interpGenNue_RHC_TRUE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_RHC_TRUE").release();
   //PredictionInterp& interpGenNumu_FHC_TRUE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_FHC_TRUE").release();
   //PredictionInterp& interpGenNumu_RHC_TRUE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_RHC_TRUE").release();
 
-  std::vector<const PredictionInterp*> predictionGenerators = {&interpGenNue_FHC_IZZLE, &interpGenNue_RHC_IZZLE, &interpGenNumu_FHC_IZZLE, &interpGenNumu_RHC_IZZLE};
-  //std::vector<const PredictionInterp*> predictionGenerators = {&interpGenNue_FHC_CVN, &interpGenNue_RHC_CVN, &interpGenNumu_FHC_CVN, &interpGenNumu_RHC_CVN};
+  //std::vector<const PredictionInterp*> predictionGenerators = {&interpGenNue_FHC_IZZLE, &interpGenNue_RHC_IZZLE, &interpGenNumu_FHC_IZZLE, &interpGenNumu_RHC_IZZLE};
+  std::vector<const PredictionInterp*> predictionGenerators = {&interpGenNue_FHC_CVN, &interpGenNue_RHC_CVN, &interpGenNumu_FHC_CVN, &interpGenNumu_RHC_CVN};
   //std::vector<const PredictionInterp*> predictionGenerators_TRUE = {&interpGenNue_FHC_TRUE, &interpGenNue_RHC_TRUE, &interpGenNumu_FHC_TRUE, &interpGenNumu_RHC_TRUE};
 
   inputFile->Close();
@@ -263,7 +271,7 @@ void sensitivityFitEnergySystematics(int systematicsMode)
           std::vector<Spectrum> predictionVector;
           //std::vector<Spectrum> predictionVector_M1;
           //std::vector<Spectrum> predictionVector_1;
-          std::vector<Spectrum> predictionVector_True;
+          //std::vector<Spectrum> predictionVector_True;
 
 	  predictionVector = Get_EnergySys_NO(predictionGenerators, systematicsToShift, trueDeltaCP, pot);
 	  //predictionVector = Get_EnergySys_NO(predictionGenerators, systematicsToShift, 0, trueDeltaCP, pot);
