@@ -19,269 +19,292 @@
 // New includes for this macro
 #include "CAFAna/Experiment/SingleSampleExperiment.h"
 #include "CAFAna/Prediction/PredictionNoExtrap.h"
+#include "CAFAna/Prediction/PredictionInterp.h"
 #include "CAFAna/Analysis/Calcs.h"
+#include "CAFAna/Analysis/CalcsNuFit.h"
 #include "OscLib/OscCalcPMNSOpt.h"
 #include "CAFAna/Fit/MinuitFitter.h"
 #include "CAFAna/Vars/FitVars.h"
 #include "CAFAna/Experiment/MultiExperiment.h"
+#include "CAFAna/Experiment/ReactorExperiment.h"
+#include "CAFAna/Systs/AnaSysts.h"
+#include "CAFAna/Systs/DUNEFluxSysts.h"
+#include "CAFAna/Core/Loaders.h"
+#include "CAFAna/Core/LoadFromFile.h"
+#include "CAFAna/Core/ISyst.h"
 
 #include "TF1.h"
 #include "Math/WrappedTF1.h"
 #include "Math/BrentRootFinder.h"
+#include "TRandom3.h"
 
 #include <random>
 
-// also add in some RHC files!
-
 using namespace ana;
 
-const std::string INPUT_FILE_NAME = "/dune/data/users/imawby/standardCAF/StateFiles.root";
+const std::string INPUT_FILE_NAME = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/trueCounts/StateFilesNoSystematicsSplitBySignTRUE.root";
 
-void PerformFit(osc::IOscCalcAdjustable *& calc, MultiExperiment &experiment, const double deltaCPSeed, const bool isLowerOctant, double &bestChiSquared, bool fitCPC);
-void SetOscCalc_CentralValue_NO(osc::IOscCalcAdjustable *& calc, const double deltaCP);
-void SetOscCalc_Throw_NO(osc::IOscCalcAdjustable *& calc, const double deltaCP);
-void SetOscCalc_CentralValue_IO(osc::IOscCalcAdjustable *& calc, const double deltaCP);
-void SetOscCalc_Throw_IO(osc::IOscCalcAdjustable *& calc, const double deltaCP);
-void deltaCPResolution_statisticalOnly();
-int GetBin(TH1D * hist, double value);
+void sensitivityFit();
 
-std::default_random_engine generator;
+std::vector<Spectrum> Get_NO(std::vector<const PredictionInterp*> &predictionGenerators, const double deltaCP, const float pot);
+void GetCount(const Spectrum &spectrum, const float pot, double &lowEnergyCount, double &middleEnergyCount, double &highEnergyCount, double &totalCount);
+void PerformFit(std::vector<const PredictionInterp*> &predictionGenerators, const std::vector<Spectrum> &predictionVector, const double deltaCPSeed, 
+		const bool isHigherOctant, const bool isPositiveHierarchy, bool fitCPC, double &bestChiSquared, std::map<std::string, float> &bestFitPosition);
 
-bool MAKE_THROWS = false;
-bool N_THROWS = MAKE_THROWS ? 200 : 1;
+int N_TEST_DELTA_CP_VALUES = 200; // 200
 
 void sensitivityFit()
 {
+  std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/trueCounts/TRUECounts_NO_SplitBySign.root";
+
   std::cout << "Reading caf files..." << std::endl;
 
   TFile * inputFile = TFile::Open(INPUT_FILE_NAME.c_str());
 
-  PredictionNoExtrap& predNue_FHC_IZZLE = *ana::LoadFrom<PredictionNoExtrap>(inputFile, "predNue_FHC_IZZLE").release();
-  PredictionNoExtrap& predNumu_FHC_IZZLE = *ana::LoadFrom<PredictionNoExtrap>(inputFile, "predNumu_FHC_IZZLE").release();
-  PredictionNoExtrap& predNue_RHC_IZZLE = *ana::LoadFrom<PredictionNoExtrap>(inputFile, "predNue_RHC_IZZLE").release();
-  PredictionNoExtrap& predNumu_RHC_IZZLE = *ana::LoadFrom<PredictionNoExtrap>(inputFile, "predNumu_RHC_IZZLE").release();
+  //PredictionInterp& interpGenNue_FHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_FHC_IZZLE").release();
+  //PredictionInterp& interpGenNue_RHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_RHC_IZZLE").release();
+  //PredictionInterp& interpGenNumu_FHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_FHC_IZZLE").release();
+  //PredictionInterp& interpGenNumu_RHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_RHC_IZZLE").release();
+
+  PredictionInterp& interpGenNue_FHC_TRUE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_FHC_TRUE").release();
+  PredictionInterp& interpGenNue_RHC_TRUE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_RHC_TRUE").release();
+  PredictionInterp& interpGenNumu_FHC_TRUE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_FHC_TRUE").release();
+  PredictionInterp& interpGenNumu_RHC_TRUE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_RHC_TRUE").release();
+
+  //PredictionInterp& interpGenNue_FHC_CVN = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_FHC_CVN").release();
+  //PredictionInterp& interpGenNue_RHC_CVN = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_RHC_CVN").release();
+  //PredictionInterp& interpGenNumu_FHC_CVN = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_FHC_CVN").release();
+  //PredictionInterp& interpGenNumu_RHC_CVN = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_RHC_CVN").release();
+
+  //std::vector<const PredictionInterp*> predictionGenerators = {&interpGenNue_FHC_IZZLE, &interpGenNue_RHC_IZZLE, &interpGenNumu_FHC_IZZLE, &interpGenNumu_RHC_IZZLE};
+  std::vector<const PredictionInterp*> predictionGenerators = {&interpGenNue_FHC_TRUE, &interpGenNue_RHC_TRUE, &interpGenNumu_FHC_TRUE, &interpGenNumu_RHC_TRUE};
+  //std::vector<const PredictionInterp*> predictionGenerators = {&interpGenNue_FHC_CVN, &interpGenNue_RHC_CVN, &interpGenNumu_FHC_CVN, &interpGenNumu_RHC_CVN};
 
   inputFile->Close();
 
   const double pot = 3.5 * 1.47e21 * 40/1.13;
 
-  TFile * outputFile = new TFile("/dune/data/users/imawby/standardCAF/IZZLESensitivityPlots_NO.root", "CREATE");
-
+  TFile * outputFile = new TFile(outputFileName.c_str(), "CREATE");
   std::cout << "created output file" << std::endl;
 
-  //int nTestCPValues(10);
-  //unsigned int nThrows(500);
-
-  int nTestCPValues(2);
-  unsigned int nThrows(2);
-
+  // Evaluate each test value
+  int nTestCPValues(N_TEST_DELTA_CP_VALUES);
   float stepSizeCP((2.0 * TMath::Pi()) / static_cast<float>(nTestCPValues));
 
   TTree * tree = new TTree("tree", "tree");
-  std::vector<std::vector<double>> chiSquaredValues(nTestCPValues);
-  std::vector<double> deltaCPValues(nTestCPValues);
+  double deltaCPValues;
+  double chiSquaredCPCValues;
+  double bestFitDmSq32;
+  double bestFitTh23;
+  double bestFitTh12;
+  double bestFitDmSq21;
+  double bestFitTh13;
+  double bestFitRho;
+  double bestFitdCP;
+  double nueLowEnergyCount, nueMiddleEnergyCount, nueHighEnergyCount, nueTotalCount;
+  double anueLowEnergyCount, anueMiddleEnergyCount, anueHighEnergyCount, anueTotalCount;
+  double numuLowEnergyCount, numuMiddleEnergyCount, numuHighEnergyCount, numuTotalCount;
+  double anumuLowEnergyCount, anumuMiddleEnergyCount, anumuHighEnergyCount, anumuTotalCount;
+  std::vector<double> nueTotalCountBin;
+
+  tree->Branch("deltaCPValues", &deltaCPValues);
+  tree->Branch("chiSquaredCPCValues" , &chiSquaredCPCValues);
+  tree->Branch("bestFitDmSq32", &bestFitDmSq32);
+  tree->Branch("bestFitTh23", &bestFitTh23);
+  tree->Branch("bestFitTh12", &bestFitTh12);
+  tree->Branch("bestFitDmSq21", &bestFitDmSq21);
+  tree->Branch("bestFitTh13", &bestFitTh13);
+  tree->Branch("bestFitRho", &bestFitRho);
+  tree->Branch("bestFitdCP", &bestFitdCP);
+  tree->Branch("nueLowEnergyCount", &nueLowEnergyCount);
+  tree->Branch("nueMiddleEnergyCount", &nueMiddleEnergyCount);
+  tree->Branch("nueHighEnergyCount", &nueHighEnergyCount);
+  tree->Branch("nueTotalCount", &nueTotalCount);
+  tree->Branch("anueLowEnergyCount", &anueLowEnergyCount);
+  tree->Branch("anueMiddleEnergyCount", &anueMiddleEnergyCount);
+  tree->Branch("anueHighEnergyCount", &anueHighEnergyCount);
+  tree->Branch("anueTotalCount", &anueTotalCount);
+  tree->Branch("numuLowEnergyCount", &numuLowEnergyCount);
+  tree->Branch("numuMiddleEnergyCount", &numuMiddleEnergyCount);
+  tree->Branch("numuHighEnergyCount", &numuHighEnergyCount);
+  tree->Branch("numuTotalCount", &numuTotalCount);
+  tree->Branch("anumuLowEnergyCount", &anumuLowEnergyCount);
+  tree->Branch("anumuMiddleEnergyCount", &anumuMiddleEnergyCount);
+  tree->Branch("anumuHighEnergyCount", &anumuHighEnergyCount);
+  tree->Branch("anumuTotalCount", &anumuTotalCount);
+  tree->Branch("nueTotalCountBin", &nueTotalCountBin);
+
 
   for (int j = 0; j < nTestCPValues; ++j)
   {
-      const double trueDeltaCP(static_cast<float>(j) * stepSizeCP);
-      deltaCPValues[j] = trueDeltaCP;
+    nueTotalCountBin.clear();
 
-      for (unsigned int i = 0; i < nThrows; ++i)
-      {
-          std::cout << "iteration: " << std::to_string(j) << "/" << std::to_string(nTestCPValues) << std::endl;
-          std::cout << "nThrow: " << std::to_string(i) << "/" << std::to_string(nThrows) << std::endl;
+    std::cout << "iteration: " << std::to_string(j + 1) << "/" << std::to_string(nTestCPValues) << std::endl;
 
-          // Make oscillation throw 
-          osc::IOscCalcAdjustable* calc = DefaultOscCalc();
-          MAKE_THROWS ? SetOscCalc_Throw_NO(calc, trueDeltaCP) : SetOscCalc_CentralValue_NO(calc, trueDeltaCP);
+    const double trueDeltaCP(static_cast<float>(j) * stepSizeCP);
+    deltaCPValues = trueDeltaCP;
 
-          // Make the mock data for trueDeltaCP value
-          // No statistical fluctuations
-          const Spectrum nueFluctuations_FHC = predNue_FHC_IZZLE.Predict(calc).AsimovData(pot);
-          const Spectrum numuFluctuations_FHC = predNumu_FHC_IZZLE.Predict(calc).AsimovData(pot);
-          const Spectrum nueFluctuations_RHC = predNue_RHC_IZZLE.Predict(calc).AsimovData(pot);
-          const Spectrum numuFluctuations_RHC = predNumu_RHC_IZZLE.Predict(calc).AsimovData(pot);
+    // Get the prediction
+    std::vector<Spectrum> predictionVector;
+    predictionVector = Get_NO(predictionGenerators, trueDeltaCP, pot);
 
-          // Apply statistical fluctuations
-          /*
-          const Spectrum nueFluctuations_FHC = predNue_FHC_IZZLE.Predict(calc).MockData(pot);
-          const Spectrum numuFluctuations_FHC = predNumu_FHC_IZZLE.Predict(calc).MockData(pot);
-          const Spectrum nueFluctuations_RHC = predNue_RHC_IZZLE.Predict(calc).MockData(pot);
-          const Spectrum numuFluctuations_RHC = predNumu_RHC_IZZLE.Predict(calc).MockData(pot);
-          */
+    nueLowEnergyCount = 0; nueMiddleEnergyCount = 0; nueHighEnergyCount = 0; nueTotalCount = 0;
+    anueLowEnergyCount = 0; anueMiddleEnergyCount = 0; anueHighEnergyCount = 0; anueTotalCount = 0;
+    numuLowEnergyCount = 0; numuMiddleEnergyCount = 0; numuHighEnergyCount = 0; numuTotalCount = 0;
+    anumuLowEnergyCount = 0; anumuMiddleEnergyCount = 0; anumuHighEnergyCount = 0; anumuTotalCount = 0;
 
-          // Create an experiment object to compare predictions to my data
-          SingleSampleExperiment nueExperiment_FHC(&predNue_FHC_IZZLE, nueFluctuations_FHC);
-          SingleSampleExperiment numuExperiment_FHC(&predNumu_FHC_IZZLE, numuFluctuations_FHC);
-          SingleSampleExperiment nueExperiment_RHC(&predNue_RHC_IZZLE, nueFluctuations_RHC);
-          SingleSampleExperiment numuExperiment_RHC(&predNumu_RHC_IZZLE, numuFluctuations_RHC);
-          //MultiExperiment multiExperiment({&nueExperiment_FHC, &numuExperiment_FHC, &nueExperiment_RHC, &numuExperiment_RHC});
-          MultiExperiment multiExperiment({&nueExperiment_FHC, &numuExperiment_FHC});
+    GetCount(predictionVector[0], pot, nueLowEnergyCount, nueMiddleEnergyCount, nueHighEnergyCount, nueTotalCount);
+    GetCount(predictionVector[1], pot, anueLowEnergyCount, anueMiddleEnergyCount, anueHighEnergyCount, anueTotalCount);
+    GetCount(predictionVector[2], pot, numuLowEnergyCount, numuMiddleEnergyCount, numuHighEnergyCount, numuTotalCount);
+    GetCount(predictionVector[3], pot, anumuLowEnergyCount, anumuMiddleEnergyCount, anumuHighEnergyCount, anumuTotalCount);
 
-          // Make several fits to avoid falling into the wrong minima (find the best deltaCP)
-          osc::IOscCalcAdjustable* fitCalc = DefaultOscCalc();
-          double bestChiSquaredCPC(std::numeric_limits<float>::max());
-          double bestChiSquaredCPV(std::numeric_limits<float>::max());
+  TH1 * hist = predictionVector[0].ToTH1(pot);
+  int nBins = hist->GetNbinsX();
 
-          // CPC Fits
-          PerformFit(fitCalc, multiExperiment, 0.0 * TMath::Pi(), true, bestChiSquaredCPC, true);
-          PerformFit(fitCalc, multiExperiment, 0.0 * TMath::Pi(), false, bestChiSquaredCPC, true);
-
-          PerformFit(fitCalc, multiExperiment, 1.0 * TMath::Pi(), true, bestChiSquaredCPC, true);
-          PerformFit(fitCalc, multiExperiment, 1.0 * TMath::Pi(), false, bestChiSquaredCPC, true);
-
-          PerformFit(fitCalc, multiExperiment, 2.0 * TMath::Pi(), true, bestChiSquaredCPC, true);
-          PerformFit(fitCalc, multiExperiment, 2.0 * TMath::Pi(), false, bestChiSquaredCPC, true);
-
-          // CPV Fits
-          PerformFit(fitCalc, multiExperiment, 0.0 * TMath::Pi(), true, bestChiSquaredCPV, false);
-          PerformFit(fitCalc, multiExperiment, 0.0 * TMath::Pi(), false, bestChiSquaredCPV, false);
-
-          PerformFit(fitCalc, multiExperiment, 1.0 * TMath::Pi(), true, bestChiSquaredCPV, false);
-          PerformFit(fitCalc, multiExperiment, 1.0 * TMath::Pi(), false, bestChiSquaredCPV, false);
-
-          PerformFit(fitCalc, multiExperiment, 2.0 * TMath::Pi(), true, bestChiSquaredCPV, false);
-          PerformFit(fitCalc, multiExperiment, 2.0 * TMath::Pi(), false, bestChiSquaredCPV, false);
-
-          const float chiSquaredDifference(bestChiSquaredCPC - bestChiSquaredCPV);
-
-          std::cout << "////////////////////////////" << std::endl;
-          std::cout << "trueDeltaCP: " << (trueDeltaCP * 180 / 3.14) << std::endl;
-          std::cout << "bestChiSquaredCPC: " << bestChiSquaredCPC << std::endl;
-          std::cout << "bestChiSquaredCPV: " << bestChiSquaredCPV << std::endl;
-          std::cout << "chiSquaredDifference: " << chiSquaredDifference << std::endl;
-          std::cout << "significance: " << TMath::Sqrt(chiSquaredDifference) << std::endl;
-          std::cout << "////////////////////////////" << std::endl;
-
-          chiSquaredValues[j].push_back(bestChiSquaredCPC);
-      }
-
-      tree->Branch(("chiSquaredValues_" + std::to_string(j)).c_str(), &chiSquaredValues[j]);
-      tree->Branch(("deltaCPValues_" + std::to_string(j)).c_str(), &deltaCPValues[j]);  
+  for (int i = 1; i <=nBins; ++i)
+  {
+    const double binContent = hist->GetBinContent(i);
+    nueTotalCountBin.push_back(binContent);
   }
 
-  tree->Fill();
+
+    // Make several fits to avoid falling into the wrong minima (find the best deltaCP)
+    double bestChiSquaredCPC(std::numeric_limits<float>::max());
+    std::map<std::string, float> bestFitPosition_CPC;
+
+    // CPC Fits
+    std::cout << "Performing CPC fits..." << std::endl;
+    PerformFit(predictionGenerators, predictionVector, 0.0 * TMath::Pi(), true, true, true, bestChiSquaredCPC, bestFitPosition_CPC);
+    PerformFit(predictionGenerators, predictionVector, 0.0 * TMath::Pi(), true, false, true, bestChiSquaredCPC, bestFitPosition_CPC);
+    PerformFit(predictionGenerators, predictionVector, 0.0 * TMath::Pi(), false, true, true, bestChiSquaredCPC, bestFitPosition_CPC);
+    PerformFit(predictionGenerators, predictionVector, 0.0 * TMath::Pi(), false, false, true, bestChiSquaredCPC, bestFitPosition_CPC);
+
+    PerformFit(predictionGenerators, predictionVector, 1.0 * TMath::Pi(), true, true, true, bestChiSquaredCPC, bestFitPosition_CPC);
+    PerformFit(predictionGenerators, predictionVector, 1.0 * TMath::Pi(), true, false, true, bestChiSquaredCPC, bestFitPosition_CPC);
+    PerformFit(predictionGenerators, predictionVector, 1.0 * TMath::Pi(), false, true, true, bestChiSquaredCPC, bestFitPosition_CPC);
+    PerformFit(predictionGenerators, predictionVector, 1.0 * TMath::Pi(), false, false, true, bestChiSquaredCPC, bestFitPosition_CPC);
+
+    PerformFit(predictionGenerators, predictionVector, 2.0 * TMath::Pi(), true, true, true, bestChiSquaredCPC, bestFitPosition_CPC);
+    PerformFit(predictionGenerators, predictionVector, 2.0 * TMath::Pi(), true, false, true, bestChiSquaredCPC, bestFitPosition_CPC);
+    PerformFit(predictionGenerators, predictionVector, 2.0 * TMath::Pi(), false, true, true, bestChiSquaredCPC, bestFitPosition_CPC);
+    PerformFit(predictionGenerators, predictionVector, 2.0 * TMath::Pi(), false, false, true, bestChiSquaredCPC, bestFitPosition_CPC);
+
+    chiSquaredCPCValues = bestChiSquaredCPC;
+    bestFitDmSq32 = bestFitPosition_CPC.find("kFitDmSq32Scaled") != bestFitPosition_CPC.end() ? bestFitPosition_CPC.at("kFitDmSq32Scaled") : -999.0;
+    bestFitTh23 = bestFitPosition_CPC.find("kFitSinSqTheta23") != bestFitPosition_CPC.end() ? bestFitPosition_CPC.at("kFitSinSqTheta23") : -999.0;
+    bestFitTh12 = bestFitPosition_CPC.find("kFitSinSq2Theta12") != bestFitPosition_CPC.end() ? bestFitPosition_CPC.at("kFitSinSq2Theta12") : -999.0;
+    bestFitDmSq21 = bestFitPosition_CPC.find("kFitDmSq21") != bestFitPosition_CPC.end() ? bestFitPosition_CPC.at("kFitDmSq21") : -999.0;
+    bestFitTh13 = bestFitPosition_CPC.find("kFitTheta13") != bestFitPosition_CPC.end() ? bestFitPosition_CPC.at("kFitTheta13") : -999.0;
+    bestFitRho = bestFitPosition_CPC.find("kFitRho") != bestFitPosition_CPC.end() ? bestFitPosition_CPC.at("kFitRho") : -999.0;
+    bestFitdCP = bestFitPosition_CPC.find("kFitDeltaInPiUnits") != bestFitPosition_CPC.end() ? bestFitPosition_CPC.at("kFitDeltaInPiUnits") : -999.0;
+
+    tree->Fill();
+  }
+
   outputFile->WriteObject(tree, "tree");    
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-int GetBin(TH1D * hist, double value)
+std::vector<Spectrum> Get_NO(std::vector<const PredictionInterp*> &predictionGenerators, const double deltaCP, const float pot)
 {
-    for (int i = 1; i <= hist-> GetNbinsX(); ++i)
-    {
-        double lowEdge(hist->GetBinLowEdge(i));
-        double highEdge(lowEdge + hist->GetBinWidth(i));
+    // Make oscillation calc
+    osc::IOscCalcAdjustable* calc = NuFitOscCalc(1);
+    calc->SetTh23(40.3*3.14/180);
+    calc->SetdCP(deltaCP);
 
-        if ((value > lowEdge) && (value < highEdge))
-            return i;
+    // Create experiments
+    std::vector<Spectrum> predictionVector;
+
+    for (const PredictionInterp *const predictionGenerator : predictionGenerators)
+    {
+        const Spectrum prediction(predictionGenerator->Predict(calc).AsimovData(pot));
+        predictionVector.push_back(prediction);
     }
 
-    return 0;
+    return predictionVector;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-void SetOscCalc_CentralValue_NO(osc::IOscCalcAdjustable *& calc, const double deltaCP)
+void GetCount(const Spectrum &spectrum, const float pot, double &lowEnergyCount, double &middleEnergyCount, double &highEnergyCount, double &totalCount)
 {
-  calc->SetRho(2.848); 
-  calc->SetDmsq21(7.39e-5);
-  calc->SetDmsq32(2.451e-3);
-  calc->SetTh12(0.5903);
-  calc->SetTh13(0.150);
-  calc->SetTh23(0.866);
-  calc->SetdCP(deltaCP);
+  TH1 * hist = spectrum.ToTH1(pot);
+  int nBins = hist->GetNbinsX();
+
+  for (int i = 1; i <=nBins; ++i)
+  {
+    const double binCenter = hist->GetBinCenter(i);
+    const double binContent = hist->GetBinContent(i);
+
+    if (binCenter < 1.50)
+      lowEnergyCount += binContent;
+    else if ((binCenter > 1.50) && (binCenter < 3.50))
+      middleEnergyCount += binContent;
+    else if ((binCenter > 3.50) && (binCenter < 6.0))
+      highEnergyCount += binContent;
+
+    totalCount += binContent;
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-void SetOscCalc_Throw_NO(osc::IOscCalcAdjustable *& calc, const double deltaCP)
+void PerformFit(std::vector<const PredictionInterp*> &predictionGenerators, const std::vector<Spectrum> &predictionVector, const double deltaCPSeed, 
+		const bool isHigherOctant, const bool isPositiveHierarchy, bool fitCPC, double &bestChiSquared, std::map<std::string, float> &bestFitPosition)
 {
-  //std::normal_distribution<double> th13_distribution(0.1503, 0.0023);
-  std::uniform_real_distribution<double> th23_distribution(0.685, 0.886);
-  std::uniform_real_distribution<double> dmsq32_distribution(2.3e-3, 2.7e-3);
+  // Set the oscillation calculator seeed
+  int hie = (isPositiveHierarchy ? 1 : -1);
+  int oct = (isHigherOctant ? 1 : -1);
 
-  const float dmsq32 = dmsq32_distribution(generator); 
-  //const float th13 = th13_distribution(generator);
-  const double th23 = th23_distribution(generator);
+  //osc::IOscCalcAdjustable* calc = NuFitOscCalc(hie, oct);
+  osc::IOscCalcAdjustable* calc = NuFitOscCalc(1);
+  calc->SetdCP(deltaCPSeed);
+  calc->SetTh23(40.3*3.14/180);
 
-  calc->SetRho(2.848); 
-  calc->SetDmsq21(7.39e-5);
-  calc->SetDmsq32(dmsq32);
-  calc->SetTh12(0.5903);
-  calc->SetTh13(0.150);
-  calc->SetTh23(th23);
-  calc->SetdCP(deltaCP);
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////
-
-void SetOscCalc_CentralValue_IO(osc::IOscCalcAdjustable *& calc, const double deltaCP)
-{
-  calc->SetRho(2.848); 
-  calc->SetDmsq21(7.39e-5);
-  calc->SetDmsq32(-2.512e-3);
-  calc->SetTh12(0.5903);
-  calc->SetTh13(0.151);
-  calc->SetTh23(0.869);
-  calc->SetdCP(deltaCP);
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////
-
-void SetOscCalc_Throw_IO(osc::IOscCalcAdjustable *& calc, const double deltaCP)
-{
-  //std::normal_distribution<double> th13_distribution(0.1510, 0.0023);
-  std::uniform_real_distribution<double> th23_distribution(0.685, 0.886);
-  std::uniform_real_distribution<double> dmsq32_distribution(-2.7e-3, -2.3e-3);
-
-  const float dmsq32 = dmsq32_distribution(generator); 
-  //const float th13 = th13_distribution(generator);
-  const double th23 = th23_distribution(generator);
-
-  calc->SetRho(2.848); 
-  calc->SetDmsq21(7.39e-5);
-  calc->SetDmsq32(dmsq32);
-  calc->SetTh12(0.5903);
-  calc->SetTh13(0.151);
-  calc->SetTh23(th23);
-  calc->SetdCP(deltaCP);
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////
-
-void PerformFit(osc::IOscCalcAdjustable *& calc, MultiExperiment &experiment, const double deltaCPSeed, const bool isLowerOctant, double &bestChiSquared, bool fitCPC)
-{
-  SetOscCalc_CentralValue_NO(calc, deltaCPSeed);
-
-  double chiSquared(9999);
-
-  std::vector<const IFitVar *> fitVariables = {&kFitDmSq32NHScaled};
-
-  isLowerOctant ? fitVariables.push_back(&kFitSinSqTheta23LowerOctant) : fitVariables.push_back(&kFitSinSqTheta23UpperOctant);
-
+  // Get fit variables
+  std::vector<const IFitVar*> fitVariables; /*=
+    {&kFitDmSq32Scaled, &kFitSinSqTheta23,
+     &kFitSinSq2Theta12, &kFitDmSq21,
+     &kFitTheta13, &kFitRho};
+					    */
+  
   if (!fitCPC)
       fitVariables.push_back(&kFitDeltaInPiUnits);
 
-  if (isLowerOctant)
-  {
-      calc->SetTh23(0.735);
-      MinuitFitter fit(&experiment, fitVariables);
-      chiSquared = fit.Fit(calc)->EvalMetricVal();
-  }
-  else
-  {
-      calc->SetTh23(0.835);
-      MinuitFitter fit(&experiment, fitVariables);
-      chiSquared = fit.Fit(calc)->EvalMetricVal();
-  }
+  // Turn into an experiment (I agree, it is annoying they're here.. but be here they must because the penalty is an experiment)
+  const SingleSampleExperiment experimentNueFHC(predictionGenerators[0], predictionVector[0]);
+  //const SingleSampleExperiment experimentNueRHC(predictionGenerators[1], predictionVector[1]);
+  //const SingleSampleExperiment experimentNumuFHC(predictionGenerators[2], predictionVector[2]);
+  //const SingleSampleExperiment experimentNumuRHC(predictionGenerators[3], predictionVector[3]);
+
+  // include the th13, rho, th12, dm21 penalty.. 
+  Penalizer_GlbLike penalty(hie, oct, true, false, false, 0);
+
+  //MultiExperiment multiExperiment({&experimentNueFHC, &experimentNueRHC, &experimentNumuFHC, &experimentNumuRHC, &penalty});
+  MultiExperiment multiExperiment({&experimentNueFHC});
+  //MultiExperiment multiExperiment({&experimentNueFHC, &experimentNumuFHC});
+
+  float chiSquared(std::numeric_limits<float>::max());
+
+  MinuitFitter fit(&multiExperiment, fitVariables);
+  chiSquared = fit.Fit(calc)->EvalMetricVal();
 
    if (chiSquared < bestChiSquared)
+   {
+       bestFitPosition["kFitDmSq32Scaled"] = calc->GetDmsq32();
+       bestFitPosition["kFitSinSqTheta23"] = calc->GetTh23();
+       bestFitPosition["kFitSinSq2Theta12"] = calc->GetTh12();
+       bestFitPosition["kFitDmSq21"] = calc->GetDmsq21();
+       bestFitPosition["kFitTheta13"] = calc->GetTh13();
+       bestFitPosition["kFitRho"] = calc->GetRho();
+       bestFitPosition["kFitDeltaInPiUnits"] = calc->GetdCP();
+
        bestChiSquared = chiSquared;
+   }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
-
 
   /*std::cout << "after: " << std::endl;
   std::cout << "rho: " << calc->GetRho() << std::endl;

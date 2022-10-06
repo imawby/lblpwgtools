@@ -4,6 +4,9 @@
 #include "CAFAna/Core/Cut.h"
 #include "StandardRecord/SRProxy.h"
 
+#include <ostream>
+#include <iostream>
+
 namespace ana
 {
     // same as the cvn!!
@@ -63,6 +66,12 @@ namespace ana
 
     inline bool PassNueSelectionFHC(const caf::SRProxy* sr)
     {
+
+      std::cout << "sr->selTrackPandizzleScore: " << sr->selTrackPandizzleScore << std::endl;
+      std::cout << "sr->nuePandizzleCut: " << sr->nuePandizzleCut << std::endl;
+      std::cout << "sr->selShowerPandrizzleScore: " << sr->selShowerPandrizzleScore << std::endl;
+      std::cout << "sr->selShowerJamPandrizzleScore: " << sr->selShowerJamPandrizzleScore << std::endl;
+
         if (!IsInFV(sr))
 	  return false;
 

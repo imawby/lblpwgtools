@@ -42,32 +42,33 @@
 
 using namespace ana;
 
-//const std::string INPUT_FILE_NAME = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/StateFilesFluxSystematicsSplitBySign.root";
-const std::string INPUT_FILE_NAME = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/realReco/StateFilesFluxSystematicsSplitBySign.root";
+const std::string INPUT_FILE_NAME = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/StateFilesXSecSystematicsSplitBySign.root";
 
-void sensitivityFitFluxSystematics(float sigmaShift);
+void sensitivityFitXSecSystematics(float sigmaShift);
 
 void PerformFit(std::vector<const PredictionInterp*> &predictionGenerators, const std::vector<Spectrum> &predictionVector, const double deltaCPSeed, 
   const bool isHigherOctant, const bool isPositiveHierarchy, bool fitCPC, double &bestChiSquared, std::map<std::string, float> &bestFitPosition);
-std::vector<Spectrum> Get_FluxSys_NO(std::vector<const PredictionInterp*> &predictionGenerators, std::vector<std::string> &systematicsToShift, const double deltaCP, const float pot);
+std::vector<Spectrum> Get_XSecSys_NO(std::vector<const PredictionInterp*> &predictionGenerators, std::vector<std::string> &systematicsToShift, const double deltaCP, const float pot);
 void PerformFitThrow(std::vector<const PredictionInterp*> &predictionGenerators, const std::vector<Spectrum> &predictionVector, const double deltaCPSeed, double &bestChiSquared, std::map<std::string, float> &bestFitPosition);
 float GetBoundedGausThrow(float min, float max);
+std::vector<Spectrum> Get_XSecSys_NO(std::vector<const PredictionInterp*> &predictionGenerators, std::vector<std::string> &systematicsToShift, const double shift, const double deltaCP, const float pot);
+
 
 std::default_random_engine generator;
 
 int N_TEST_DELTA_CP_VALUES = 100; // 200
-bool MAKE_THROWS = true;
+bool MAKE_THROWS = false;
 int N_THROWS = MAKE_THROWS ? 500 : 1; //
-bool FIT_SYSTEMATICS = false;
+bool FIT_SYSTEMATICS = true;
 
-void sensitivityFitFluxSystematics()
+void sensitivityFitXSecSystematics()
 {
-  //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESensitivityPlotsFluxSystematicThrows_NO_SplitBySign.root";
-std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/realReco/fluxSystematics/IZZLESensitivityPlotsFluxSystematicThrows_NO_SplitBySign.root";
-  //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/CVNSensitivityPlotsNoSystematics_NO_SplitBySign.root";
-  //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESpectraPlotsSystematics_NO_SplitBySign_MPIO2.root";
+  //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESensitivityPlotsXSecSystematicThrows_NO_SplitBySign.root";
+  //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/xsecSystematics/IZZLESpectraPlotsSystematics_NO_SplitBySign_PPIO2.root";
+  //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESensitivityPlotsXSecSystematicFit_NO_SplitBySign.root";
+  std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/CVNSensitivityPlotsXSecSystematicFit_NO_SplitBySign.root";
 
-  DUNEFluxSystVector systematicsVector = GetDUNEFluxSysts(30, true, false);
+  std::vector<ana::ISyst const *> systematicsVector = GetListOfSysts(false, true, false, false, true, false, true, false, 0, false);
 
   std::vector<std::string> systematicsToShift;
 
@@ -155,8 +156,7 @@ std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/realR
   for (int j = 0; j < nTestCPValues; ++j)
   {
       const double trueDeltaCP(static_cast<float>(j) * stepSizeCP);
-
-      //const double trueDeltaCP(1.5 * 3.14);
+      //const double trueDeltaCP(0.5 * 3.14);
 
       deltaCPValues = trueDeltaCP;
 
@@ -191,12 +191,12 @@ std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/realR
           //std::vector<Spectrum> predictionVector_1;
           //std::vector<Spectrum> predictionVector_True;
 
-	  predictionVector = Get_FluxSys_NO(predictionGenerators, systematicsToShift, trueDeltaCP, pot);
-	  //predictionVector = Get_FluxSys_NO(predictionGenerators, systematicsToShift, 0, trueDeltaCP, pot);
-	  //predictionVector_M1 = Get_FluxSys_NO(predictionGenerators, systematicsToShift, -1, trueDeltaCP, pot);
-	  //predictionVector_1 = Get_FluxSys_NO(predictionGenerators, systematicsToShift, 1, trueDeltaCP, pot);
-	  //predictionVector_True = Get_FluxSys_NO(predictionGenerators_TRUE, systematicsToShift, 0, trueDeltaCP, pot);
-
+	  predictionVector = Get_XSecSys_NO(predictionGenerators, systematicsToShift, trueDeltaCP, pot);
+	  //predictionVector = Get_XSecSys_NO(predictionGenerators, systematicsToShift, 0, trueDeltaCP, pot);
+	  //predictionVector_M1 = Get_XSecSys_NO(predictionGenerators, systematicsToShift, -1, trueDeltaCP, pot);
+	  //predictionVector_1 = Get_XSecSys_NO(predictionGenerators, systematicsToShift, 1, trueDeltaCP, pot);
+	  //predictionVector_True = Get_XSecSys_NO(predictionGenerators_TRUE, systematicsToShift, 0, trueDeltaCP, pot);
+	  
 	  /*
 	  predictionVector[0].ToTH1(pot)->Write("nue_0");
 	  predictionVector[1].ToTH1(pot)->Write("anue_0");
@@ -213,10 +213,10 @@ std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/realR
 	  predictionVector_1[2].ToTH1(pot)->Write("numu_1");
 	  predictionVector_1[3].ToTH1(pot)->Write("anumu_1");
 
-	  predictionVector_True[0].ToTH1(pot)->Write("nue_True");
-	  predictionVector_True[1].ToTH1(pot)->Write("anue_True");
-	  predictionVector_True[2].ToTH1(pot)->Write("numu_True");
-	  predictionVector_True[3].ToTH1(pot)->Write("anumu_True");
+	  //predictionVector_True[0].ToTH1(pot)->Write("nue_True");
+	  //predictionVector_True[1].ToTH1(pot)->Write("anue_True");
+	  //predictionVector_True[2].ToTH1(pot)->Write("numu_True");
+	  //predictionVector_True[3].ToTH1(pot)->Write("anumu_True");
 
 	  return;
 	  */
@@ -323,7 +323,7 @@ std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/realR
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-std::vector<Spectrum> Get_FluxSys_NO(std::vector<const PredictionInterp*> &predictionGenerators, std::vector<std::string> &systematicsToShift, const double deltaCP, const float pot)
+std::vector<Spectrum> Get_XSecSys_NO(std::vector<const PredictionInterp*> &predictionGenerators, std::vector<std::string> &systematicsToShift, const double deltaCP, const float pot)
 {
     // Make systematic throws
     SystShifts systematicShifts;
@@ -344,6 +344,42 @@ std::vector<Spectrum> Get_FluxSys_NO(std::vector<const PredictionInterp*> &predi
   	        systematicShifts.SetShift(systematic, GetBoundedGausThrow(systematic->Min() * 0.8, systematic->Max() * 0.8));
 	    }
 	}
+      }
+    }
+
+    // Make oscillation calc
+    osc::IOscCalcAdjustable* calc = NuFitOscCalc(1);
+    calc->SetdCP(deltaCP);
+
+    // Create experiments
+    std::vector<Spectrum> predictionVector;
+
+    for (const PredictionInterp *const predictionGenerator : predictionGenerators)
+    {
+        const Spectrum prediction(predictionGenerator->PredictSyst(calc, systematicShifts).AsimovData(pot));
+        predictionVector.push_back(prediction);
+    }
+
+    return predictionVector;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
+std::vector<Spectrum> Get_XSecSys_NO(std::vector<const PredictionInterp*> &predictionGenerators, std::vector<std::string> &systematicsToShift, const double shift, const double deltaCP, const float pot)
+{
+    // Make systematic throws
+    SystShifts systematicShifts;
+
+    std::vector<ISyst const *> systematics(predictionGenerators.front()->GetAllSysts());
+
+    for (const ISyst * const systematic : systematics)
+    {
+      std::string shortName(systematic->ShortName());
+
+      for (std::string &sysToShiftName : systematicsToShift)
+      {
+          if (shortName == sysToShiftName)
+	    systematicShifts.SetShift(systematic, shift);
       }
     }
 
