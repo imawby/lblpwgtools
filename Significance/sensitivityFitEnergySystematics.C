@@ -42,30 +42,38 @@
 
 using namespace ana;
 
-const std::string INPUT_FILE_NAME = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/StateFilesEnergySystematicsSplitBySign.root";
+//const std::string INPUT_FILE_NAME = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/StateFilesEnergySystematicsSplitBySign.root";
+const std::string INPUT_FILE_NAME = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/energySystematics/StateFilesEnergySystematicsSplitBySign.root";
 
-void sensitivityFitEnergySystematics(float sigmaShift);
+void sensitivityFitEnergySystematics(int systematicsMode);
 
 void PerformFit(std::vector<const PredictionInterp*> &predictionGenerators, const std::vector<Spectrum> &predictionVector, std::vector<std::string> &systematicsToFitNames, const double deltaCPSeed, 
 		const bool isHigherOctant, const bool isPositiveHierarchy, bool fitCPC, double &bestChiSquared, std::map<std::string, float> &bestFitPosition);
 std::vector<Spectrum> Get_EnergySys_NO(std::vector<const PredictionInterp*> &predictionGenerators, std::vector<std::string> &systematicsToShift, const double deltaCP, const float pot);
 void PerformFitThrow(std::vector<const PredictionInterp*> &predictionGenerators, const std::vector<Spectrum> &predictionVector, const double deltaCPSeed, double &bestChiSquared, std::map<std::string, float> &bestFitPosition);
-float GetBoundedGausThrow(float min, float max);
+float GetBoundedGausThrowThis(float min, float max);
 std::vector<Spectrum> Get_EnergySys_NO(std::vector<const PredictionInterp*> &predictionGenerators, std::vector<std::string> &systematicsToShift, const double shift, const double deltaCP, const float pot);
 
 std::default_random_engine generator;
 
-int N_TEST_DELTA_CP_VALUES = 100; // 200
-bool MAKE_THROWS = false;
+int N_TEST_DELTA_CP_VALUES = 50; //100; // 200
+bool MAKE_THROWS = true;
 int N_THROWS = MAKE_THROWS ? 500 : 1; //
-bool FIT_SYSTEMATICS = true;
 
 void sensitivityFitEnergySystematics(int systematicsMode)
 {
-  // Change fit to throws
+  std::time_t time = std::time(nullptr);
+  generator.seed(time);
+
   //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESensitivityPlotsEnergySystematicFit_NO_SplitBySign.root";
-  std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/CVNSensitivityPlotsEnergySystematicFit_NO_SplitBySign.root";
+  //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/CVNSensitivityPlotsEnergySystematicFit_NO_SplitBySign.root";
   //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/";
+
+  //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/energySystematics/IZZLESensitivityPlotsEnergySystematicFit_NO_SplitBySign.root";
+  //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/energySystematics/IZZLESensitivityPlotsEnergySystematicThrows_NO_SplitBySign.root";
+
+  std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/energySystematics/IZZLESensitivityPlotsEnergySystematicThrowsMinus_NO_SplitBySign.root";
+
   std::vector<std::string> systematicsToShift;
 
   if (systematicsMode == 0)
@@ -79,7 +87,7 @@ void sensitivityFitEnergySystematics(int systematicsMode)
     "EMUncorrFD", "UncorrFDEMSqrt", "UncorrFDEMInvSqrt", "EMResFD"};
 
     //outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/IZZLESensitivityPlotsAllEnergySystematicFit_NO_SplitBySign.root";
-    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/CVNPlotsAllEnergySystematicFit_NO_SplitBySign.root";
+    //outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/CVNPlotsAllEnergySystematicFit_NO_SplitBySign.root";
     //outputFileName += "allEnergy";
   }
   else if (systematicsMode == 1)
@@ -91,7 +99,7 @@ void sensitivityFitEnergySystematics(int systematicsMode)
     "ChargedHadUncorrFD", "UncorrFDHadSqrt", "UncorrFDHadInvSqrt", "ChargedHadResFD"};
 
     //outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/IZZLESensitivityPlotsChargedHadronEnergySystematicFit_NO_SplitBySign.root";
-    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/CVNSensitivityPlotsChargedHadronEnergySystematicFit_NO_SplitBySign.root";
+    //outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/CVNSensitivityPlotsChargedHadronEnergySystematicFit_NO_SplitBySign.root";
     //outputFileName += "chargedHadron";
   }
   else if (systematicsMode == 2)
@@ -103,7 +111,7 @@ void sensitivityFitEnergySystematics(int systematicsMode)
     "EScaleMuLArFD", "UncorrFDMuSqrt", "UncorrFDMuInvSqrt", "MuonResFD"};
 
     //outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/IZZLESensitivityPlotsMuonEnergySystematicFit_NO_SplitBySign.root";
-    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/CVNSensitivityPlotsMuonEnergySystematicFit_NO_SplitBySign.root";
+    //outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/CVNSensitivityPlotsMuonEnergySystematicFit_NO_SplitBySign.root";
     //outputFileName += "muon";
   }
   else if (systematicsMode == 3)
@@ -115,7 +123,7 @@ void sensitivityFitEnergySystematics(int systematicsMode)
       "NUncorrFD", "UncorrFDNSqrt", "UncorrFDNInvSqrt", "NResFD"};
 
     //outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/IZZLESensitivityPlotsNeutronEnergySystematicFit_NO_SplitBySign.root";
-    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/CVNSensitivityPlotsNeutronEnergySystematicFit_NO_SplitBySign.root";
+    //outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/CVNSensitivityPlotsNeutronEnergySystematicFit_NO_SplitBySign.root";
     //outputFileName += "neutron";
   }
   else if (systematicsMode == 4)
@@ -127,7 +135,7 @@ void sensitivityFitEnergySystematics(int systematicsMode)
       "EMUncorrFD", "UncorrFDEMSqrt", "UncorrFDEMInvSqrt", "EMResFD"};
 
     //outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/IZZLESensitivityPlotsEMEnergySystematicFit_NO_SplitBySign.root";
-    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/CVNSensitivityPlotsEMEnergySystematicFit_NO_SplitBySign.root";
+    //outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/CVNSensitivityPlotsEMEnergySystematicFit_NO_SplitBySign.root";
     //outputFileName += "EMShower";
   }
   else if (systematicsMode == 5)
@@ -136,7 +144,7 @@ void sensitivityFitEnergySystematics(int systematicsMode)
     systematicsToShift = {"FDRecoNumuSyst", "FDRecoNueSyst"};
 
     //outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/IZZLESensitivityPlotsRecoModelSystematicFit_NO_SplitBySign.root";
-    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/CVNSensitivityPlotsRecoModelSystematicFit_NO_SplitBySign.root";
+    //outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/CVNSensitivityPlotsRecoModelSystematicFit_NO_SplitBySign.root";
     //outputFileName += "recoModel";
   }
   else if (systematicsMode == 6)
@@ -146,8 +154,21 @@ void sensitivityFitEnergySystematics(int systematicsMode)
       "EnergyScaleFD", "UncorrFDTotSqrt", "UncorrFDTotInvSqrt"};
 
     //outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/IZZLESensitivityPlotsTotalEnergySystematicFit_NO_SplitBySign.root";
-    outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/CVNSensitivityPlotsTotalEnergySystematicFit_NO_SplitBySign.root";
+    //outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/CVNSensitivityPlotsTotalEnergySystematicFit_NO_SplitBySign.root";
     //outputFileName += "totalEnergy";
+  }
+  if (systematicsMode == 7)
+  {
+    systematicsToShift = {
+    "EnergyScaleFD", "UncorrFDTotSqrt", "UncorrFDTotInvSqrt", 
+    "ChargedHadUncorrFD", "UncorrFDHadSqrt", "UncorrFDHadInvSqrt",
+    "EScaleMuLArFD", "UncorrFDMuSqrt", "UncorrFDMuInvSqrt"
+    "NUncorrFD", "UncorrFDNSqrt", "UncorrFDNInvSqrt", 
+    "EMUncorrFD", "UncorrFDEMSqrt", "UncorrFDEMInvSqrt"};
+
+    //outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/IZZLESensitivityPlotsAllEnergySystematicFit_NO_SplitBySign.root";
+    //outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/CVNPlotsAllEnergySystematicFit_NO_SplitBySign.root";
+    //outputFileName += "allEnergy";
   }
   else
   {
@@ -160,23 +181,23 @@ void sensitivityFitEnergySystematics(int systematicsMode)
 
   TFile * inputFile = TFile::Open(INPUT_FILE_NAME.c_str());
 
-  //PredictionInterp& interpGenNue_FHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_FHC_IZZLE").release();
-  //PredictionInterp& interpGenNue_RHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_RHC_IZZLE").release();
-  //PredictionInterp& interpGenNumu_FHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_FHC_IZZLE").release();
-  //PredictionInterp& interpGenNumu_RHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_RHC_IZZLE").release();
+  PredictionInterp& interpGenNue_FHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_FHC_IZZLE").release();
+  PredictionInterp& interpGenNue_RHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_RHC_IZZLE").release();
+  PredictionInterp& interpGenNumu_FHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_FHC_IZZLE").release();
+  PredictionInterp& interpGenNumu_RHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_RHC_IZZLE").release();
 
-  PredictionInterp& interpGenNue_FHC_CVN = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_FHC_CVN").release();
-  PredictionInterp& interpGenNue_RHC_CVN = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_RHC_CVN").release();
-  PredictionInterp& interpGenNumu_FHC_CVN = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_FHC_CVN").release();
-  PredictionInterp& interpGenNumu_RHC_CVN = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_RHC_CVN").release();
+  //PredictionInterp& interpGenNue_FHC_CVN = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_FHC_CVN").release();
+  //PredictionInterp& interpGenNue_RHC_CVN = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_RHC_CVN").release();
+  //PredictionInterp& interpGenNumu_FHC_CVN = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_FHC_CVN").release();
+  //PredictionInterp& interpGenNumu_RHC_CVN = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_RHC_CVN").release();
 
   //PredictionInterp& interpGenNue_FHC_TRUE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_FHC_TRUE").release();
   //PredictionInterp& interpGenNue_RHC_TRUE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_RHC_TRUE").release();
   //PredictionInterp& interpGenNumu_FHC_TRUE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_FHC_TRUE").release();
   //PredictionInterp& interpGenNumu_RHC_TRUE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_RHC_TRUE").release();
 
-  //std::vector<const PredictionInterp*> predictionGenerators = {&interpGenNue_FHC_IZZLE, &interpGenNue_RHC_IZZLE, &interpGenNumu_FHC_IZZLE, &interpGenNumu_RHC_IZZLE};
-  std::vector<const PredictionInterp*> predictionGenerators = {&interpGenNue_FHC_CVN, &interpGenNue_RHC_CVN, &interpGenNumu_FHC_CVN, &interpGenNumu_RHC_CVN};
+  std::vector<const PredictionInterp*> predictionGenerators = {&interpGenNue_FHC_IZZLE, &interpGenNue_RHC_IZZLE, &interpGenNumu_FHC_IZZLE, &interpGenNumu_RHC_IZZLE};
+  //std::vector<const PredictionInterp*> predictionGenerators = {&interpGenNue_FHC_CVN, &interpGenNue_RHC_CVN, &interpGenNumu_FHC_CVN, &interpGenNumu_RHC_CVN};
   //std::vector<const PredictionInterp*> predictionGenerators_TRUE = {&interpGenNue_FHC_TRUE, &interpGenNue_RHC_TRUE, &interpGenNumu_FHC_TRUE, &interpGenNumu_RHC_TRUE};
 
   inputFile->Close();
@@ -237,8 +258,6 @@ void sensitivityFitEnergySystematics(int systematicsMode)
   for (int j = 0; j < nTestCPValues; ++j)
   {
     const double trueDeltaCP(static_cast<float>(j) * stepSizeCP);
-
-    //const double trueDeltaCP(0.3 * 3.14);
 
       deltaCPValues = trueDeltaCP;
 
@@ -423,7 +442,7 @@ std::vector<Spectrum> Get_EnergySys_NO(std::vector<const PredictionInterp*> &pre
             if (shortName == sysToShiftName)
             {
 	      //std::cout << "Applying shift to shortName: " << systematic->ShortName() << std::endl;
-  	        systematicShifts.SetShift(systematic, GetBoundedGausThrow(systematic->Min() * 0.8, systematic->Max() * 0.8));
+	      systematicShifts.SetShift(systematic, (-1.0 * std::fabs(GetBoundedGausThrowThis(systematic->Min() * 0.8, systematic->Max() * 0.8))));
 	    }
 	}
       }
@@ -483,7 +502,7 @@ std::vector<Spectrum> Get_EnergySys_NO(std::vector<const PredictionInterp*> &pre
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-float GetBoundedGausThrow(float min, float max)
+float GetBoundedGausThrowThis(float min, float max)
 {
    std::normal_distribution<double> gausDistribution(0, 1);
 

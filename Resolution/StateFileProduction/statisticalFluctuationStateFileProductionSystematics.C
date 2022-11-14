@@ -30,10 +30,16 @@
 
 using namespace ana;
 
+//const std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/xsecSystematics/StateFilesXSecSystematicsSplitBySign.root";
+//const std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/energySystematics/StateFilesEnergySystematicsSplitBySign.root";
+//const std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/fluxSystematics/StateFilesFluxSystematicsSplitBySign.root";
+//const std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/noSystematics/StateFilesNoSystematicsSplitBySign.root";
+const std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/fullEstimate/StateFilesAllSystematicsSplitBySign.root";
+
 //const std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/StateFilesFluxSystematicsSplitBySign.root";
 //const std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/StateFilesFluxSystematicsSplitBySign.root";
 //const std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/StateFilesEnergySystematicsSplitBySign.root";
-const std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/trueCounts/StateFilesNoSystematicsSplitBySignTRUE.root";
+//const std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/trueCounts/StateFilesNoSystematicsSplitBySign_TrueEnergy.root";
 
 void statisticalFluctuationStateFileProductionSystematics();
 
@@ -41,7 +47,7 @@ void statisticalFluctuationStateFileProductionSystematics()
 {
    std::cout << "Reading caf files..." << std::endl;
    
-   
+   /*  
   const std::string fnameNonSwapFHC = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/nu/caf_hist_nu.root";
   const std::string fnameNueSwapFHC = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/nue/caf_hist_nue.root";
   const std::string fnameTauSwapFHC = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/nutau/caf_hist_nutau.root";
@@ -49,17 +55,17 @@ void statisticalFluctuationStateFileProductionSystematics()
   const std::string fnameNonSwapRHC = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/anu/caf_hist_anu.root";
   const std::string fnameNueSwapRHC = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/anue/caf_hist_anue.root";
   const std::string fnameTauSwapRHC = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/anutau/caf_hist_anutau.root";
-   
-
-   /*
-  const std::string fnameNonSwapFHC = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/realReco/nu/caf_hist_nu_realReco.root";
-  const std::string fnameNueSwapFHC = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/realReco/nue/caf_hist_nue_realReco.root";
-  const std::string fnameTauSwapFHC = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/realReco/nutau/caf_hist_nutau_realReco.root";
-
-  const std::string fnameNonSwapRHC = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/realReco/anu/caf_hist_anu_realReco.root";
-  const std::string fnameNueSwapRHC = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/realReco/anue/caf_hist_anue_realReco.root";
-  const std::string fnameTauSwapRHC = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/realReco/anutau/caf_hist_anutau_realReco.root";
    */
+
+      
+  const std::string fnameNonSwapFHC = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/nu/caf_hist_nu_realReco.root";
+  const std::string fnameNueSwapFHC = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/nue/caf_hist_nue_realReco.root";
+  const std::string fnameTauSwapFHC = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/nutau/caf_hist_nutau_realReco.root";
+
+  const std::string fnameNonSwapRHC = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/anu/caf_hist_anu_realReco.root";
+  const std::string fnameNueSwapRHC = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/anue/caf_hist_anue_realReco.root";
+  const std::string fnameTauSwapRHC = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/anutau/caf_hist_anutau_realReco.root";
+  
 
   Loaders loadersFHC;
   loadersFHC.SetLoaderPath(fnameNonSwapFHC, caf::kFARDET, ana::Loaders::DataMC::kMC, ana::Loaders::SwappingConfig::kNonSwap);
@@ -73,6 +79,8 @@ void statisticalFluctuationStateFileProductionSystematics()
   
   const Var kRecoNueEnergy = SIMPLEVAR(Ev_reco_nue);
   const Var kRecoNumuEnergy = SIMPLEVAR(Ev_reco_numu);
+  const Var kTrueNueEnergy = SIMPLEVAR(Ev);
+  const Var kTrueNumuEnergy = SIMPLEVAR(Ev);
 
   // Binning
   const std::vector<double> lowBinEdges = {0.0, 1.50, 1.75, 2.0, 2.25, 2.50, 2.75, 3.0, 3.25, 3.50, 3.75, 4.0, 4.25, 4.50, 4.75, 
@@ -107,8 +115,11 @@ void statisticalFluctuationStateFileProductionSystematics()
   //const Binning binsEnergy = Binning::Custom(threeBinEdges);
   //const Binning binsEnergy = Binning::Custom(fourBinEdges);
 
-  const HistAxis axNueEnergy("Reco #nu_{e} energy (GeV)", binsEnergy, kRecoNueEnergy);
-  const HistAxis axNumuEnergy("Reco #nu_{#mu} energy (GeV)", binsEnergy, kRecoNumuEnergy);
+  const HistAxis axNueEnergy("Reco #nu_{e} Energy [GeV]", binsEnergy, kRecoNueEnergy);
+  const HistAxis axNumuEnergy("Reco #nu_{#mu} Energy [GeV]", binsEnergy, kRecoNumuEnergy);
+
+  //const HistAxis axNueEnergy("True #nu_{e} energy (GeV)", binsEnergy, kTrueNueEnergy);
+  //const HistAxis axNumuEnergy("True #nu_{#mu} energy (GeV)", binsEnergy, kTrueNumuEnergy);
 
   const double pot = 3.5 * 1.47e21 * 40/1.13;
 
@@ -130,7 +141,7 @@ void statisticalFluctuationStateFileProductionSystematics()
   //std::vector<ana::ISyst const *> systematicsVector = GetListOfSysts(false, false, true, false, true, false, true, false, 0, false);
 
   // All systematics
-  /*
+  
   std::vector<ana::ISyst const *> systematicsVector = GetListOfSysts(true, true, true, false, true, false, true, false, 30, false);
 
   for (ana::ISyst const * sys : systematicsVector)
@@ -141,18 +152,18 @@ void statisticalFluctuationStateFileProductionSystematics()
       std::cout << "Max: " << sys->Max() << std::endl;
       std::cout << "Apply shift: " << sys->ApplyPenalty() << std::endl;
   }
-  */
+  
   // No systematics
-  std::vector<ana::ISyst const *> systematicsVector;
+  //std::vector<ana::ISyst const *> systematicsVector;
 
   osc::IOscCalcAdjustable* calc = DefaultOscCalc();
 
-  //NoExtrapPredictionGenerator genNue_FHC_IZZLE(axNueEnergy, kIsNueSelectedFHC, kUnweighted);
-  //NoExtrapPredictionGenerator genNue_RHC_IZZLE(axNueEnergy, kIsNueSelectedRHC, kUnweighted);
-  //NoExtrapPredictionGenerator genNumu_FHC_IZZLE(axNumuEnergy, kIsNumuSelectedFHC, kUnweighted);
-  //NoExtrapPredictionGenerator genNumu_RHC_IZZLE(axNumuEnergy, kIsNumuSelectedRHC, kUnweighted);
+  NoExtrapPredictionGenerator genNue_FHC_IZZLE(axNueEnergy, kIsNueSelectedFHC, kUnweighted);
+  NoExtrapPredictionGenerator genNue_RHC_IZZLE(axNueEnergy, kIsNueSelectedRHC, kUnweighted);
+  NoExtrapPredictionGenerator genNumu_FHC_IZZLE(axNumuEnergy, kIsNumuSelectedFHC, kUnweighted);
+  NoExtrapPredictionGenerator genNumu_RHC_IZZLE(axNumuEnergy, kIsNumuSelectedRHC, kUnweighted);
 
-  
+  /*
   const Cut kIsTrueNue([](const caf::SRProxy* sr)
   {
       return sr->isCC && abs(sr->nuPDGunosc) == 14 && abs(sr->nuPDG) == 12 && sr->nuPDG > 0;
@@ -172,33 +183,34 @@ void statisticalFluctuationStateFileProductionSystematics()
   {
       return sr->isCC && abs(sr->nuPDGunosc) == 14 && abs(sr->nuPDG) == 14 && sr->nuPDG < 0;
   });
+  */
 
-  NoExtrapPredictionGenerator genNue_FHC_TRUE(axNueEnergy, kIsTrueNue, kUnweighted);
-  NoExtrapPredictionGenerator genNue_RHC_TRUE(axNueEnergy, kIsTrueAnue, kUnweighted);
-  NoExtrapPredictionGenerator genNumu_FHC_TRUE(axNumuEnergy, kIsTrueNumu, kUnweighted);
-  NoExtrapPredictionGenerator genNumu_RHC_TRUE(axNumuEnergy, kIsTrueAnumu, kUnweighted);
+  //NoExtrapPredictionGenerator genNue_FHC_TRUE(axNueEnergy, kIsTrueNue, kUnweighted);
+  //NoExtrapPredictionGenerator genNue_RHC_TRUE(axNueEnergy, kIsTrueAnue, kUnweighted);
+  //NoExtrapPredictionGenerator genNumu_FHC_TRUE(axNumuEnergy, kIsTrueNumu, kUnweighted);
+  //NoExtrapPredictionGenerator genNumu_RHC_TRUE(axNumuEnergy, kIsTrueAnumu, kUnweighted);
   
-  //NoExtrapPredictionGenerator genNue_FHC_CVN(axNueEnergy, kPassFD_CVN_NUE, kUnweighted);
-  //NoExtrapPredictionGenerator genNue_RHC_CVN(axNueEnergy, kPassFD_CVN_NUE, kUnweighted);
-  //NoExtrapPredictionGenerator genNumu_FHC_CVN(axNumuEnergy, kPassFD_CVN_NUMU, kUnweighted);
-  //NoExtrapPredictionGenerator genNumu_RHC_CVN(axNumuEnergy, kPassFD_CVN_NUMU, kUnweighted);
+  NoExtrapPredictionGenerator genNue_FHC_CVN(axNueEnergy, kPassFD_CVN_NUE, kUnweighted);
+  NoExtrapPredictionGenerator genNue_RHC_CVN(axNueEnergy, kPassFD_CVN_NUE, kUnweighted);
+  NoExtrapPredictionGenerator genNumu_FHC_CVN(axNumuEnergy, kPassFD_CVN_NUMU, kUnweighted);
+  NoExtrapPredictionGenerator genNumu_RHC_CVN(axNumuEnergy, kPassFD_CVN_NUMU, kUnweighted);
 
-  //PredictionInterp interpGenNue_FHC_IZZLE(systematicsVector, calc, genNue_FHC_IZZLE, loadersFHC, kNoShift, PredictionInterp::kCombineSigns);
-  //PredictionInterp interpGenNue_RHC_IZZLE(systematicsVector, calc, genNue_RHC_IZZLE, loadersRHC, kNoShift, PredictionInterp::kSplitBySign);
-  //PredictionInterp interpGenNumu_FHC_IZZLE(systematicsVector, calc, genNumu_FHC_IZZLE, loadersFHC, kNoShift, PredictionInterp::kCombineSigns);
-  //PredictionInterp interpGenNumu_RHC_IZZLE(systematicsVector, calc, genNumu_RHC_IZZLE, loadersRHC, kNoShift, PredictionInterp::kSplitBySign);
+  PredictionInterp interpGenNue_FHC_IZZLE(systematicsVector, calc, genNue_FHC_IZZLE, loadersFHC, kNoShift, PredictionInterp::kCombineSigns);
+  PredictionInterp interpGenNue_RHC_IZZLE(systematicsVector, calc, genNue_RHC_IZZLE, loadersRHC, kNoShift, PredictionInterp::kSplitBySign);
+  PredictionInterp interpGenNumu_FHC_IZZLE(systematicsVector, calc, genNumu_FHC_IZZLE, loadersFHC, kNoShift, PredictionInterp::kCombineSigns);
+  PredictionInterp interpGenNumu_RHC_IZZLE(systematicsVector, calc, genNumu_RHC_IZZLE, loadersRHC, kNoShift, PredictionInterp::kSplitBySign);
 
   
-  PredictionInterp interpGenNue_FHC_TRUE(systematicsVector, calc, genNue_FHC_TRUE, loadersFHC, kNoShift, PredictionInterp::kCombineSigns);
-  PredictionInterp interpGenNue_RHC_TRUE(systematicsVector, calc, genNue_RHC_TRUE, loadersRHC, kNoShift, PredictionInterp::kSplitBySign);
-  PredictionInterp interpGenNumu_FHC_TRUE(systematicsVector, calc, genNumu_FHC_TRUE, loadersFHC, kNoShift, PredictionInterp::kCombineSigns);
-  PredictionInterp interpGenNumu_RHC_TRUE(systematicsVector, calc, genNumu_RHC_TRUE, loadersRHC, kNoShift, PredictionInterp::kSplitBySign);
+  //PredictionInterp interpGenNue_FHC_TRUE(systematicsVector, calc, genNue_FHC_TRUE, loadersFHC, kNoShift, PredictionInterp::kCombineSigns);
+  //PredictionInterp interpGenNue_RHC_TRUE(systematicsVector, calc, genNue_RHC_TRUE, loadersRHC, kNoShift, PredictionInterp::kSplitBySign);
+  //PredictionInterp interpGenNumu_FHC_TRUE(systematicsVector, calc, genNumu_FHC_TRUE, loadersFHC, kNoShift, PredictionInterp::kCombineSigns);
+  //PredictionInterp interpGenNumu_RHC_TRUE(systematicsVector, calc, genNumu_RHC_TRUE, loadersRHC, kNoShift, PredictionInterp::kSplitBySign);
   
 
-  //PredictionInterp interpGenNue_FHC_CVN(systematicsVector, calc, genNue_FHC_CVN, loadersFHC, kNoShift, PredictionInterp::kCombineSigns);
-  //PredictionInterp interpGenNue_RHC_CVN(systematicsVector, calc, genNue_RHC_CVN, loadersRHC, kNoShift, PredictionInterp::kSplitBySign);
-  //PredictionInterp interpGenNumu_FHC_CVN(systematicsVector, calc, genNumu_FHC_CVN, loadersFHC, kNoShift, PredictionInterp::kCombineSigns);
-  //PredictionInterp interpGenNumu_RHC_CVN(systematicsVector, calc, genNumu_RHC_CVN, loadersRHC, kNoShift, PredictionInterp::kSplitBySign);
+  PredictionInterp interpGenNue_FHC_CVN(systematicsVector, calc, genNue_FHC_CVN, loadersFHC, kNoShift, PredictionInterp::kCombineSigns);
+  PredictionInterp interpGenNue_RHC_CVN(systematicsVector, calc, genNue_RHC_CVN, loadersRHC, kNoShift, PredictionInterp::kSplitBySign);
+  PredictionInterp interpGenNumu_FHC_CVN(systematicsVector, calc, genNumu_FHC_CVN, loadersFHC, kNoShift, PredictionInterp::kCombineSigns);
+  PredictionInterp interpGenNumu_RHC_CVN(systematicsVector, calc, genNumu_RHC_CVN, loadersRHC, kNoShift, PredictionInterp::kSplitBySign);
 
   std::cout << "Filling spectra..." << std::endl;
   loadersFHC.Go();
@@ -207,22 +219,22 @@ void statisticalFluctuationStateFileProductionSystematics()
   std::cout << "Saving to file: " << outputFileName << std::endl;
   TFile * outputFile = new TFile(outputFileName.c_str(), "CREATE");
 
-  //interpGenNue_FHC_IZZLE.SaveTo(outputFile, "interpGenNue_FHC_IZZLE");
-  //interpGenNue_RHC_IZZLE.SaveTo(outputFile, "interpGenNue_RHC_IZZLE");
-  //interpGenNumu_FHC_IZZLE.SaveTo(outputFile, "interpGenNumu_FHC_IZZLE");
-  //interpGenNumu_RHC_IZZLE.SaveTo(outputFile, "interpGenNumu_RHC_IZZLE");
+  interpGenNue_FHC_IZZLE.SaveTo(outputFile, "interpGenNue_FHC_IZZLE");
+  interpGenNue_RHC_IZZLE.SaveTo(outputFile, "interpGenNue_RHC_IZZLE");
+  interpGenNumu_FHC_IZZLE.SaveTo(outputFile, "interpGenNumu_FHC_IZZLE");
+  interpGenNumu_RHC_IZZLE.SaveTo(outputFile, "interpGenNumu_RHC_IZZLE");
 
   
-  interpGenNue_FHC_TRUE.SaveTo(outputFile, "interpGenNue_FHC_TRUE");
-  interpGenNue_RHC_TRUE.SaveTo(outputFile, "interpGenNue_RHC_TRUE");
-  interpGenNumu_FHC_TRUE.SaveTo(outputFile, "interpGenNumu_FHC_TRUE");
-  interpGenNumu_RHC_TRUE.SaveTo(outputFile, "interpGenNumu_RHC_TRUE");
+  //interpGenNue_FHC_TRUE.SaveTo(outputFile, "interpGenNue_FHC_TRUE");
+  //interpGenNue_RHC_TRUE.SaveTo(outputFile, "interpGenNue_RHC_TRUE");
+  //interpGenNumu_FHC_TRUE.SaveTo(outputFile, "interpGenNumu_FHC_TRUE");
+  //interpGenNumu_RHC_TRUE.SaveTo(outputFile, "interpGenNumu_RHC_TRUE");
   
 
-  //interpGenNue_FHC_CVN.SaveTo(outputFile, "interpGenNue_FHC_CVN");
-  //interpGenNue_RHC_CVN.SaveTo(outputFile, "interpGenNue_RHC_CVN");
-  //interpGenNumu_FHC_CVN.SaveTo(outputFile, "interpGenNumu_FHC_CVN");
-  //interpGenNumu_RHC_CVN.SaveTo(outputFile, "interpGenNumu_RHC_CVN");
+  interpGenNue_FHC_CVN.SaveTo(outputFile, "interpGenNue_FHC_CVN");
+  interpGenNue_RHC_CVN.SaveTo(outputFile, "interpGenNue_RHC_CVN");
+  interpGenNumu_FHC_CVN.SaveTo(outputFile, "interpGenNumu_FHC_CVN");
+  interpGenNumu_RHC_CVN.SaveTo(outputFile, "interpGenNumu_RHC_CVN");
 
   std::cout << "All done making state files..." << std::endl;
 }

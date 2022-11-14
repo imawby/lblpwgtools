@@ -43,29 +43,35 @@
 using namespace ana;
 
 //const std::string INPUT_FILE_NAME = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/StateFilesFluxSystematicsSplitBySign.root";
-const std::string INPUT_FILE_NAME = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/realReco/StateFilesFluxSystematicsSplitBySign.root";
+const std::string INPUT_FILE_NAME = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/fluxSystematics/StateFilesFluxSystematicsSplitBySign.root";
 
-void sensitivityFitFluxSystematics(float sigmaShift);
+void sensitivityFitFluxSystematics();
 
 void PerformFit(std::vector<const PredictionInterp*> &predictionGenerators, const std::vector<Spectrum> &predictionVector, const double deltaCPSeed, 
   const bool isHigherOctant, const bool isPositiveHierarchy, bool fitCPC, double &bestChiSquared, std::map<std::string, float> &bestFitPosition);
 std::vector<Spectrum> Get_FluxSys_NO(std::vector<const PredictionInterp*> &predictionGenerators, std::vector<std::string> &systematicsToShift, const double deltaCP, const float pot);
+std::vector<Spectrum> Get_FluxSys_NO(std::vector<const PredictionInterp*> &predictionGenerators, std::vector<std::string> &systematicsToShift, const double shift, const double deltaCP, const float pot);
 void PerformFitThrow(std::vector<const PredictionInterp*> &predictionGenerators, const std::vector<Spectrum> &predictionVector, const double deltaCPSeed, double &bestChiSquared, std::map<std::string, float> &bestFitPosition);
-float GetBoundedGausThrow(float min, float max);
+float GetBoundedGausThrowThis(float min, float max);
 
 std::default_random_engine generator;
 
 int N_TEST_DELTA_CP_VALUES = 100; // 200
-bool MAKE_THROWS = true;
+bool MAKE_THROWS = false;
 int N_THROWS = MAKE_THROWS ? 500 : 1; //
-bool FIT_SYSTEMATICS = false;
 
 void sensitivityFitFluxSystematics()
 {
   //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESensitivityPlotsFluxSystematicThrows_NO_SplitBySign.root";
-std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/realReco/fluxSystematics/IZZLESensitivityPlotsFluxSystematicThrows_NO_SplitBySign.root";
   //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/CVNSensitivityPlotsNoSystematics_NO_SplitBySign.root";
   //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESpectraPlotsSystematics_NO_SplitBySign_MPIO2.root";
+
+  //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/fluxSystematics/IZZLESensitivityPlotsFluxSystematicFit_NO_SplitBySign.root";
+  //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/fluxSystematics/IZZLESensitivityPlotsFluxSystematicThrows_NO_SplitBySign.root";
+  std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/fluxSystematics/IZZLESpectraPlotsSystematicsCAN_DELETE_NO_SplitBySign_ZERO.root";
+
+  std::time_t time = std::time(nullptr);
+  generator.seed(time);
 
   DUNEFluxSystVector systematicsVector = GetDUNEFluxSysts(30, true, false);
 
@@ -78,23 +84,23 @@ std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/realR
 
   TFile * inputFile = TFile::Open(INPUT_FILE_NAME.c_str());
 
-  //PredictionInterp& interpGenNue_FHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_FHC_IZZLE").release();
-  //PredictionInterp& interpGenNue_RHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_RHC_IZZLE").release();
-  //PredictionInterp& interpGenNumu_FHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_FHC_IZZLE").release();
-  //PredictionInterp& interpGenNumu_RHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_RHC_IZZLE").release();
+  PredictionInterp& interpGenNue_FHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_FHC_IZZLE").release();
+  PredictionInterp& interpGenNue_RHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_RHC_IZZLE").release();
+  PredictionInterp& interpGenNumu_FHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_FHC_IZZLE").release();
+  PredictionInterp& interpGenNumu_RHC_IZZLE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_RHC_IZZLE").release();
 
-  PredictionInterp& interpGenNue_FHC_CVN = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_FHC_CVN").release();
-  PredictionInterp& interpGenNue_RHC_CVN = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_RHC_CVN").release();
-  PredictionInterp& interpGenNumu_FHC_CVN = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_FHC_CVN").release();
-  PredictionInterp& interpGenNumu_RHC_CVN = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_RHC_CVN").release();
+  //PredictionInterp& interpGenNue_FHC_CVN = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_FHC_CVN").release();
+  //PredictionInterp& interpGenNue_RHC_CVN = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_RHC_CVN").release();
+  //PredictionInterp& interpGenNumu_FHC_CVN = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_FHC_CVN").release();
+  //PredictionInterp& interpGenNumu_RHC_CVN = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_RHC_CVN").release();
 
   //PredictionInterp& interpGenNue_FHC_TRUE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_FHC_TRUE").release();
   //PredictionInterp& interpGenNue_RHC_TRUE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNue_RHC_TRUE").release();
   //PredictionInterp& interpGenNumu_FHC_TRUE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_FHC_TRUE").release();
   //PredictionInterp& interpGenNumu_RHC_TRUE = *ana::LoadFrom<PredictionInterp>(inputFile, "interpGenNumu_RHC_TRUE").release();
 
-  //std::vector<const PredictionInterp*> predictionGenerators = {&interpGenNue_FHC_IZZLE, &interpGenNue_RHC_IZZLE, &interpGenNumu_FHC_IZZLE, &interpGenNumu_RHC_IZZLE};
-  std::vector<const PredictionInterp*> predictionGenerators = {&interpGenNue_FHC_CVN, &interpGenNue_RHC_CVN, &interpGenNumu_FHC_CVN, &interpGenNumu_RHC_CVN};
+  std::vector<const PredictionInterp*> predictionGenerators = {&interpGenNue_FHC_IZZLE, &interpGenNue_RHC_IZZLE, &interpGenNumu_FHC_IZZLE, &interpGenNumu_RHC_IZZLE};
+  //std::vector<const PredictionInterp*> predictionGenerators = {&interpGenNue_FHC_CVN, &interpGenNue_RHC_CVN, &interpGenNumu_FHC_CVN, &interpGenNumu_RHC_CVN};
   //std::vector<const PredictionInterp*> predictionGenerators_TRUE = {&interpGenNue_FHC_TRUE, &interpGenNue_RHC_TRUE, &interpGenNumu_FHC_TRUE, &interpGenNumu_RHC_TRUE};
 
   inputFile->Close();
@@ -152,11 +158,12 @@ std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/realR
   tree->Branch("bestFitRho_CPV", &bestFitRho_CPV);
   tree->Branch("bestFitdCP_CPV", &bestFitdCP_CPV);
 
+
   for (int j = 0; j < nTestCPValues; ++j)
   {
-      const double trueDeltaCP(static_cast<float>(j) * stepSizeCP);
+    const double trueDeltaCP(static_cast<float>(j) * stepSizeCP);
 
-      //const double trueDeltaCP(1.5 * 3.14);
+    //const double trueDeltaCP(0.0 * TMath::Pi());
 
       deltaCPValues = trueDeltaCP;
 
@@ -213,10 +220,10 @@ std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/realR
 	  predictionVector_1[2].ToTH1(pot)->Write("numu_1");
 	  predictionVector_1[3].ToTH1(pot)->Write("anumu_1");
 
-	  predictionVector_True[0].ToTH1(pot)->Write("nue_True");
-	  predictionVector_True[1].ToTH1(pot)->Write("anue_True");
-	  predictionVector_True[2].ToTH1(pot)->Write("numu_True");
-	  predictionVector_True[3].ToTH1(pot)->Write("anumu_True");
+	  //predictionVector_True[0].ToTH1(pot)->Write("nue_True");
+	  //predictionVector_True[1].ToTH1(pot)->Write("anue_True");
+	  //predictionVector_True[2].ToTH1(pot)->Write("numu_True");
+	  //predictionVector_True[3].ToTH1(pot)->Write("anumu_True");
 
 	  return;
 	  */
@@ -341,7 +348,7 @@ std::vector<Spectrum> Get_FluxSys_NO(std::vector<const PredictionInterp*> &predi
             if (shortName == sysToShiftName)
             {
 	      //std::cout << "Applying shift to shortName: " << systematic->ShortName() << std::endl;
-  	        systematicShifts.SetShift(systematic, GetBoundedGausThrow(systematic->Min() * 0.8, systematic->Max() * 0.8));
+  	        systematicShifts.SetShift(systematic, GetBoundedGausThrowThis(systematic->Min() * 0.8, systematic->Max() * 0.8));
 	    }
 	}
       }
@@ -365,7 +372,46 @@ std::vector<Spectrum> Get_FluxSys_NO(std::vector<const PredictionInterp*> &predi
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-float GetBoundedGausThrow(float min, float max)
+std::vector<Spectrum> Get_FluxSys_NO(std::vector<const PredictionInterp*> &predictionGenerators, std::vector<std::string> &systematicsToShift, const double shift, const double deltaCP, const float pot)
+{
+    // Make systematic throws
+    SystShifts systematicShifts;
+
+    if (MAKE_THROWS)
+    {
+      std::vector<ISyst const *> systematics(predictionGenerators.front()->GetAllSysts());
+
+      for (const ISyst * const systematic : systematics)
+      {
+        std::string shortName(systematic->ShortName());
+
+        for (std::string &sysToShiftName : systematicsToShift)
+        {
+            if (shortName == sysToShiftName)
+	      systematicShifts.SetShift(systematic, shift);
+	}
+      }
+    }
+
+    // Make oscillation calc
+    osc::IOscCalcAdjustable* calc = NuFitOscCalc(1);
+    calc->SetdCP(deltaCP);
+
+    // Create experiments
+    std::vector<Spectrum> predictionVector;
+
+    for (const PredictionInterp *const predictionGenerator : predictionGenerators)
+    {
+        const Spectrum prediction(predictionGenerator->PredictSyst(calc, systematicShifts).AsimovData(pot));
+        predictionVector.push_back(prediction);
+    }
+
+    return predictionVector;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
+float GetBoundedGausThrowThis(float min, float max)
 {
    std::normal_distribution<double> gausDistribution(0, 1);
 
