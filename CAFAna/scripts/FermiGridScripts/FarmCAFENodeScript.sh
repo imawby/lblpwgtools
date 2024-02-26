@@ -1,13 +1,13 @@
 #!/bin/bash
 
 PNFS_PATH_APPEND=CAFAnaOutputs/MyOutput
-CAFE_COMMAND_FILE="CAFECommands.cmd"
+#CAFE_COMMAND_FILE="/dune/app/users/imawby/lblpwgtools/CommandFiles/CAFCommands.cmd"
 SCRIPT_TO_INCLUDE=""
 RENAME_SUBMIT_SCRIPT=""
 
-LIFETIME_EXP="4h"
+LIFETIME_EXP="90h"
 DISK_EXP="2GB"
-MEM_EXP="1.9GB"
+MEM_EXP="1.98GB"
 
 FORCE_REMOVE="0"
 
@@ -34,7 +34,7 @@ while [[ ${#} -gt 0 ]]; do
       fi
 
       PNFS_PATH_APPEND="$2"
-      echo "[OPT]: Writing output to /pnfs/dune/scratch/users/${USER}/${PNFS_PATH_APPEND}/<CLUSTERID>.<JOBID>"
+      echo "[OPT]: Writing output to /pnfs/dune/persistent/users/${USER}/${PNFS_PATH_APPEND}/<CLUSTERID>.<JOBID>"
       shift # past argument
       ;;
 
@@ -137,7 +137,7 @@ while [[ ${#} -gt 0 ]]; do
 
       -?|--help)
       echo "[RUNLIKE] ${SCRIPTNAME} [opts] --cafe-comands <args>"
-      echo -e "\t-p|--pnfs-path-append      : Path to append to output path: /pnfs/dune/scratch/users/${USER}/"
+      echo -e "\t-p|--pnfs-path-append      : Path to append to output path: /pnfs/dune/persistent/users/${USER}/"
       echo -e "\t-c|--cafe-command-file     : File containing '<script name>  [arg1 [arg2 [...]]]'. One job is submitted per line in the input file."
       echo -e "\t--cafe-commands            : All arguments passed after this will be passed to cafe on the node."
       echo -e "\t-n|--rename-submit-script  : Rename the submission script for easier diagnostics."
@@ -202,13 +202,13 @@ NJOBSTORUN=$(cat CAFECommands.cmd | wc -l)
 
 LN=0
 # for i in $(cat CAFECommands.cmd | cut -f 1 -d " "); do
-# 
+ 
 #   if ! tar -tf CAFAna.Blob.tar.gz | grep CAFAna/scripts/${i}; then
 #     echo -e "[ERROR]: In CAFECommands.cmd on line ${LN}:\n  $(cat CAFECommands.cmd | head -$(( LN + 1 )) | tail -1)\n[ERROR]: Trying to run job for script ${i}. But it doesn't exist in the tarball at CAFAna/scripts/ and wasn't passed with -S. The script needs to be installed with CAFAna or passed to this submission script to run."
 #     echo -e "[INFO]: tar -tf CAFAna.Blob.tar.gz | grep CAFAna/scripts:\n$(tar -tf CAFAna.Blob.tar.gz | grep CAFAna/scripts | grep -v FermiGridScripts)"
 #     exit
 #   fi
-# 
+ 
 #   LN=$(( LN + 1 ))
 # done
 
@@ -226,26 +226,26 @@ if ! voms-proxy-info -exists; then
   voms-proxy-info --all
 fi
 
-ifdh ls /pnfs/dune/scratch/users/${USER}/${PNFS_PATH_APPEND}
+ifdh ls /pnfs/dune/persistent/users/${USER}/${PNFS_PATH_APPEND}
 
 if [ $? -ne 0 ]; then
   if [ ${DRY_RUN} -eq 0 ]; then
-    mkdir -p /pnfs/dune/scratch/users/${USER}/${PNFS_PATH_APPEND}
-    ifdh ls /pnfs/dune/scratch/users/${USER}/${PNFS_PATH_APPEND}
+    mkdir -p /pnfs/dune/persistent/users/${USER}/${PNFS_PATH_APPEND}
+    ifdh ls /pnfs/dune/persistent/users/${USER}/${PNFS_PATH_APPEND}
     if [ $? -ne 0 ]; then
-      echo "Unable to make /pnfs/dune/scratch/users/${USER}/${PNFS_PATH_APPEND}."
+      echo "Unable to make /pnfs/dune/persistent/users/${USER}/${PNFS_PATH_APPEND}."
       exit 2
     fi
   else
-    echo "Would try to make /pnfs/dune/scratch/users/${USER}/${PNFS_PATH_APPEND}..."
+    echo "Would try to make /pnfs/dune/persistent/users/${USER}/${PNFS_PATH_APPEND}..."
   fi
 elif [ ${FORCE_REMOVE} == "1" ]; then
   if [ ${DRY_RUN} -eq 0 ]; then
-    echo "[INFO]: Force removing previous existant output directories: \"/pnfs/dune/scratch/users/${USER}/${PNFS_PATH_APPEND}\" "
-    rm -rf /pnfs/dune/scratch/users/${USER}/${PNFS_PATH_APPEND}
-    mkdir -p /pnfs/dune/scratch/users/${USER}/${PNFS_PATH_APPEND}
+    echo "[INFO]: Force removing previous existant output directories: \"/pnfs/dune/persistent/users/${USER}/${PNFS_PATH_APPEND}\" "
+    rm -rf /pnfs/dune/persistent/users/${USER}/${PNFS_PATH_APPEND}
+    mkdir -p /pnfs/dune/persistent/users/${USER}/${PNFS_PATH_APPEND}
   else
-    echo "Would force remove and remake /pnfs/dune/scratch/users/${USER}/${PNFS_PATH_APPEND}..."
+    echo "Would force remove and remake /pnfs/dune/persistent/users/${USER}/${PNFS_PATH_APPEND}..."
   fi
 fi
 
@@ -258,11 +258,11 @@ fi
 if [ ${DRY_RUN} -eq 0 ]; then
   if [ ${NJOBSTORUN} -eq 1 ]; then
     #--role=Analysis --subgroup=analysis
-      JID=$(jobsub_submit --group=${EXPERIMENT} --jobid-output-only --append_condor_requirements="(TARGET.CVMFS_dune_osgstorage_org_REVISION>=${OSG_STORAGE_VERSION})" --resource-provides=usage_model=OPPORTUNISTIC,DEDICATED,OFFSITE --expected-lifetime=${LIFETIME_EXP} --disk=${DISK_EXP} --memory=${MEM_EXP} --cpu=1 --OS=SL7 --tar_file_name=dropbox://CAFAna.Blob.tar.gz file://${SUBMIT_SCRIPT} ${PNFS_PATH_APPEND} ${LOG_TO_IFDH} )
+      JID=$(jobsub_submit --group=${EXPERIMENT} --append_condor_requirements="(TARGET.CVMFS_dune_osgstorage_org_REVISION>=${OSG_STORAGE_VERSION})" --resource-provides=usage_model=OPPORTUNISTIC,DEDICATED --expected-lifetime=${LIFETIME_EXP} --disk=${DISK_EXP} --memory=${MEM_EXP} --cpu=1 --OS=SL7 --tar_file_name=dropbox://CAFAna.Blob.tar.gz file://${SUBMIT_SCRIPT} ${PNFS_PATH_APPEND} ${LOG_TO_IFDH} )
       echo ${JID}
   else
     #--role=Analysis --subgroup=analysis
-      JID=$(jobsub_submit --group=${EXPERIMENT} --jobid-output-only --append_condor_requirements="(TARGET.CVMFS_dune_osgstorage_org_REVISION>=${OSG_STORAGE_VERSION})" --resource-provides=usage_model=OPPORTUNISTIC,DEDICATED,OFFSITE -N ${NJOBSTORUN} --expected-lifetime=${LIFETIME_EXP} --disk=${DISK_EXP} --memory=${MEM_EXP} --cpu=1 --OS=SL7 --tar_file_name=dropbox://CAFAna.Blob.tar.gz file://${SUBMIT_SCRIPT} ${PNFS_PATH_APPEND} ${LOG_TO_IFDH} )
+      JID=$(jobsub_submit --group=${EXPERIMENT} --append_condor_requirements="(TARGET.CVMFS_dune_osgstorage_org_REVISION>=${OSG_STORAGE_VERSION})" --resource-provides=usage_model=OPPORTUNISTIC,DEDICATED -N ${NJOBSTORUN} --expected-lifetime=${LIFETIME_EXP} --disk=${DISK_EXP} --memory=${MEM_EXP} --cpu=1 --OS=SL7 --tar_file_name=dropbox://CAFAna.Blob.tar.gz file://${SUBMIT_SCRIPT} ${PNFS_PATH_APPEND} ${LOG_TO_IFDH} )
       echo ${JID}
   fi
 else

@@ -17,7 +17,11 @@ fi
 
 mkdir tar_state; cd tar_state
 cp -r ${CAFANA} ./CAFAna
-cp -r /dune/data/users/picker24/CAFAnaStateFiles/v4_all CAFAna/scripts/.
+#cp -r /dune/data/users/picker24/CAFAnaStateFiles/v4_all CAFAna/scripts/.
+#cp /dune/app/users/imawby/lblpwgtools/Resolution/StateFileProduction/Test.root CAFAna/
+#cp /pnfs/dune/resilient/users/imawby/StateFiles/StateFilesAllSystematicsSplitBySign.root CAFAna/
+cp /pnfs/dune/resilient/users/imawby/StateFiles/StateFilesAllSystematicsSplitBySign.root CAFAna/
+
 
 if [ ! -z "${EXTRA_SCRIPT_NAME}" ]; then
   cp ${EXTRA_SCRIPT_NAME} CAFAna/scripts/
@@ -28,7 +32,7 @@ if [ -e ../CAFECommands.cmd ]; then
   cp ../CAFECommands.cmd CAFAna/
 fi
 
-cp ../InputCAFs.*.list CAFAna/
+#cp ../InputCAFs.*.list CAFAna/
 
 tar -zcvf CAFAna.Blob.tar.gz CAFAna/*
 cd ..

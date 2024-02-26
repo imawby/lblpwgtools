@@ -16,9 +16,14 @@ if [ ! -z ${2} ]; then
   fi
 fi
 
-if [ ! -e CAFAna/CAFECommands.cmd ]; then
+#if [ -z ${INPUT_TAR_FILE} ]; then
+#  LOGYLOG "[ERROR]: Expected to recieve an input file."
+#  exit 1
+#fi
+
+if [ ! -e ${INPUT_TAR_DIR_LOCAL}/CAFAna/CAFECommands.cmd ]; then
   LOGYLOG "[ERROR]: Expected to recieve a command file @ CAFAna/CAFECommands.cmd but didn't."
-  ls CAFAna
+  ls ${INPUT_TAR_DIR_LOCAL}/CAFAna
   exit 2
 fi
 
@@ -47,23 +52,40 @@ if [ -z ${GRID_USER} ]; then
   exit 4
 fi
 
-mv CAFAna $_CONDOR_SCRATCH_DIR/
+LOGYLOG "GRID_USER is ${GRID_USER}"
+
+mv ${INPUT_TAR_DIR_LOCAL}/CAFAna $_CONDOR_SCRATCH_DIR/
 
 cd $_CONDOR_SCRATCH_DIR
 
-export CAFANA=$(readlink -f CAFAna)
+export CAFANA=${INPUT_TAR_DIR_LOCAL}/CAFAna
+#source ${CAFANA}/CAFAnaEnv.sh
 source ${CAFANA}/CAFAnaEnv.sh
+LOGYLOG "BOOST_DIR IS ${BOOST_DIR}"
+LOGYLOG "BOOST_INC IS ${BOOST_INC}"
+LOGYLOG "BOOST_LIB IS ${BOOST_LIB}"
+LOGYLOG "ROOT_INCLUDE_PATH IS ${ROOT_INCLUDE_PATH}"
+LOGYLOG "LD_LIBRARY_PATH IS ${LD_LIBRARY_PATH}"
+LOGYLOG "SETUP_BOOST IS ${SETUP_BOOST}"
+LOGYLOG "BOOST_LIB IS {$BOOST_LIB}"
+LOGYLOG "BOOST_FQ_DIR IS ${BOOST_FQ_DIR}"
+LOGYLOG "PKG_CONFIG_PATH IS ${PKG_CONFIG_PATH}"
+LOGYLOG "CMAKE_PREFIX_PATH IS ${CMAKE_PREFIX_PATH}"
 
 voms-proxy-info --all
-
 setup ifdhc
-
 ups active
+kx509
+
+echo "X509_USER_PROXY is"
+echo $X509_USER_PROXY
+
+#setup_fnal_security
 
 export IFDH_CP_UNLINK_ON_ERROR=1;
 export IFDH_CP_MAXRETRIES=2;
 
-PNFS_OUTDIR_STUB=/pnfs/dune/scratch/users/${GRID_USER}/${PNFS_PATH_APPEND}
+PNFS_OUTDIR_STUB=/pnfs/dune/persistent/users/${GRID_USER}/${PNFS_PATH_APPEND}
 LOGYLOG "Output stub dir is ${PNFS_OUTDIR_STUB}"
 
 ifdh ls ${PNFS_OUTDIR_STUB}
@@ -92,6 +114,15 @@ LOGYLOG "Running command: ${LINE}"
 
 SCRIPT_NAME=$(echo ${LINE} | cut -f 1 -d " ")
 OUTPUT_NAME=$(echo ${LINE} | cut -f 3 -d " ")
+N_THROWS=$(echo ${LINE} | cut -f 4 -d " ")
+N_TEST_POINTS=$(echo ${LINE} | cut -f 5 -d " ")
+TEST_VALUE_INDEX=$(echo ${LINE} | cut -f 6 -d " ")
+
+LOGYLOG "Trying to open tarball"
+
+ls ${CAFANA}
+
+LOGYLOG "Maybe opened tarball? who knows?"
 
 LOGYLOG "Running script ${SCRIPT_NAME} and expecting output ${OUTPUT_NAME}"
 
@@ -100,14 +131,42 @@ if [ ! -e  ${CAFANA}/scripts/${SCRIPT_NAME} ]; then
   exit 6
 fi
 
-cp ${CAFANA}/scripts/common_fit_definitions.C .
-cp ${CAFANA}/scripts/${SCRIPT_NAME} .
+#cp ${CAFANA}/scripts/common_fit_definitions.C .
+#cp ${CAFANA}/scripts/${SCRIPT_NAME} .
 
 LOGYLOG "Running script @ $(date)"
 
-LOGYLOG "cafe -q -b ${CAFANA}/scripts/${SCRIPT_NAME} $(echo ${LINE} | cut -f 2- -d " ") &> ${SCRIPT_NAME}.log"
+#LOGYLOG "cafe -q -b ${CAFANA}/scripts/${SCRIPT_NAME} $(echo ${LINE} | cut -f 2- -d " ") &> ${SCRIPT_NAME}.log"
+#cafe -q -b ${CAFANA}/scripts/${SCRIPT_NAME} $(echo ${LINE} | cut -f 2- -d " ") &> ${SCRIPT_NAME}.log
 
-cafe -q -b ${CAFANA}/scripts/${SCRIPT_NAME} $(echo ${LINE} | cut -f 2- -d " ") &> ${SCRIPT_NAME}.log
+ups active
+
+unsetup python
+setup python v3_7_2
+setup gcc v9_3_0
+setup boost v1_75_0  
+setup dune_oslibs
+unsetup ifdh
+setup ifdhc v2_5_16 -q e20:p392:prof
+
+LOGYLOG "IFDHC_LIB IS ${IFDHC_LIB}"
+LOGYLOG "BOOST_DIR IS ${BOOST_DIR}"
+LOGYLOG "BOOST_INC IS ${BOOST_INC}"
+LOGYLOG "BOOST_LIB IS ${BOOST_LIB}"
+
+FILE_NAME=${CAFANA}/StateFilesAllSystematicsSplitBySign.root
+
+chmod ugo+rwx ${FILE_NAME}
+
+ls -lth ${CAFANA}
+ls -lth ${CAFANA}/scripts
+
+pwd
+cafe -q -b ${CAFANA}/scripts/${SCRIPT_NAME} ${N_THROWS} ${N_TEST_POINTS} ${TEST_VALUE_INDEX} &> ${SCRIPT_NAME}.log  
+
+setup ifdhc
+
+LOGYLOG "cafe ${CAFANA}/scripts/${SCRIPT_NAME} &> ${SCRIPT_NAME}.log"
 
 LOGYLOG "Copying output @ $(date)"
 
@@ -121,7 +180,6 @@ fi
 
 for f in *.root; do
   LOGYLOG "ifdh cp -D $IFDH_OPTION ${f} ${PNFS_OUTDIR}/"
-
   ifdh cp -D $IFDH_OPTION ${f} ${PNFS_OUTDIR}/
 done
 
