@@ -42,10 +42,13 @@
 
 using namespace ana;
 
-//const std::string INPUT_FILE_NAME = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/trueCounts/StateFilesNoSystematicsSplitBySign_TrueEnergy.root";
+const std::string INPUT_FILE_NAME = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/trueCounts/StateFilesNoSystematicsSplitBySign_RecoEnergyRecoSelection.root";
+
+//const std::string INPUT_FILE_NAME = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/trueCounts/StateFilesNoSystematicsSplitBySign_RecoEnergyTrueSelection.root";
 //const std::string INPUT_FILE_NAME = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/trueCounts/StateFilesNoSystematicsSplitBySignTRUE.root";
 //const std::string INPUT_FILE_NAME = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/trueCounts/StateFilesNoSystematicsSplitBySign.root";
-const std::string INPUT_FILE_NAME = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/noSystematics/StateFilesNoSystematicsSplitBySign.root";
+//const std::string INPUT_FILE_NAME = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/noSystematics/StateFilesNoBinsNoSystematicsSplitBySign_STANDARD.root";
+///storage/epp2/phrsnt/lblpwgtools/realRecoCAF/noSystematics/StateFilesNoSystematicsSplitBySign.root";
 
 void sensitivityFit();
 
@@ -55,15 +58,19 @@ void PerformFit(std::vector<const PredictionInterp*> &predictionGenerators, cons
 		const bool isHigherOctant, const bool isPositiveHierarchy, bool fitCPC, double &bestChiSquared, std::map<std::string, float> &bestFitPosition, 
 		double &bestChiSquared_nueFHC, double &bestChiSquared_numuFHC, double &bestChiSquared_nueRHC, double &bestChiSquared_numuRHC,
 		double &bestChiSquared_FHC, double &bestChiSquared_RHC);
+void PerformFit(std::vector<const PredictionInterp*> &predictionGenerators, const std::vector<Spectrum> &predictionVector, const double deltaCPSeed, 
+		const bool isHigherOctant, const bool isPositiveHierarchy, bool fitCPC, double &bestChiSquared, std::map<std::string, float> &bestFitPosition);
 
 int N_TEST_DELTA_CP_VALUES = 200; // 200
 
 void sensitivityFit()
 {
   //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/trueCounts/TRUECountsTRUEEnergy_NO_SplitBySign.root";
-  //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/trueCounts/TRUECounts_NO_SplitBySign.root";
+  //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/trueCounts/TRUECountsRECOEnergy_NO_SplitBySign.root";
   //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/trueCounts/STANDARDCounts_NO_SplitBySign.root";
-  std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/noSystematics/Counts_NO_SplitBySign.root";
+std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/trueCounts/STANDARDCounts_NO_SplitBySign.root";
+
+  //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/noSystematics/IZZLESensitivityPlotsNoBinsNoSystematicFit_NO_SplitBySign.root";
 
   std::cout << "Reading caf files..." << std::endl;
 
@@ -91,7 +98,7 @@ void sensitivityFit()
 
   inputFile->Close();
 
-  const double pot = 3.5 * 1.47e21 * 40/1.13;
+  const double pot = 3.5 * 1.1e21 * 40/1.13;
 
   TFile * outputFile = new TFile(outputFileName.c_str(), "CREATE");
   std::cout << "created output file" << std::endl;
@@ -103,6 +110,8 @@ void sensitivityFit()
   TTree * tree = new TTree("tree", "tree");
   double deltaCPValues;
   double chiSquaredCPCValues;
+  double chiSquaredCPVValues;
+  double chiSquaredValues;
   double chiSquaredNueFHC;
   double chiSquaredNumuFHC;
   double chiSquaredNueRHC;
@@ -124,6 +133,8 @@ void sensitivityFit()
   std::vector<double> numuTotalCountBin;
 
   tree->Branch("deltaCPValues", &deltaCPValues);
+  tree->Branch("chiSquaredValues" , &chiSquaredValues);
+  tree->Branch("chiSquaredCPVValues" , &chiSquaredCPVValues);
   tree->Branch("chiSquaredCPCValues" , &chiSquaredCPCValues);
   tree->Branch("chiSquaredNueFHC", &chiSquaredNueFHC);
   tree->Branch("chiSquaredNumuFHC", &chiSquaredNumuFHC);
@@ -201,6 +212,7 @@ void sensitivityFit()
 
     // Make several fits to avoid falling into the wrong minima (find the best deltaCP)
     double bestChiSquaredCPC(std::numeric_limits<float>::max());
+    double bestChiSquaredCPV(std::numeric_limits<float>::max());
     double bestChiSquaredNueFHC(std::numeric_limits<float>::max());
     double bestChiSquaredNumuFHC(std::numeric_limits<float>::max());
     double bestChiSquaredNueRHC(std::numeric_limits<float>::max());
@@ -208,29 +220,64 @@ void sensitivityFit()
     double bestChiSquaredFHC(std::numeric_limits<float>::max());
     double bestChiSquaredRHC(std::numeric_limits<float>::max());
 
-    std::map<std::string, float> bestFitPosition_CPC;
+    std::map<std::string, float> bestFitPosition_CPC, bestFitPosition_CPV;
 
     // CPC Fits
-    std::cout << "Performing CPC fits..." << std::endl;
     PerformFit(predictionGenerators, predictionVector, 0.0 * TMath::Pi(), true, true, true, bestChiSquaredCPC, bestFitPosition_CPC, 
 	       bestChiSquaredNueFHC, bestChiSquaredNumuFHC, bestChiSquaredNueRHC, bestChiSquaredNumuRHC, bestChiSquaredFHC, bestChiSquaredRHC);
-    //PerformFit(predictionGenerators, predictionVector, 0.0 * TMath::Pi(), true, false, true, bestChiSquaredCPC, bestFitPosition_CPC);
-    //PerformFit(predictionGenerators, predictionVector, 0.0 * TMath::Pi(), false, true, true, bestChiSquaredCPC, bestFitPosition_CPC);
-    //PerformFit(predictionGenerators, predictionVector, 0.0 * TMath::Pi(), false, false, true, bestChiSquaredCPC, bestFitPosition_CPC);
-
+    
     PerformFit(predictionGenerators, predictionVector, 1.0 * TMath::Pi(), true, true, true, bestChiSquaredCPC, bestFitPosition_CPC,
 	       bestChiSquaredNueFHC, bestChiSquaredNumuFHC, bestChiSquaredNueRHC, bestChiSquaredNumuRHC, bestChiSquaredFHC, bestChiSquaredRHC);
-    //PerformFit(predictionGenerators, predictionVector, 1.0 * TMath::Pi(), true, false, true, bestChiSquaredCPC, bestFitPosition_CPC);
-    //PerformFit(predictionGenerators, predictionVector, 1.0 * TMath::Pi(), false, true, true, bestChiSquaredCPC, bestFitPosition_CPC);
-    //PerformFit(predictionGenerators, predictionVector, 1.0 * TMath::Pi(), false, false, true, bestChiSquaredCPC, bestFitPosition_CPC);
 
     PerformFit(predictionGenerators, predictionVector, 2.0 * TMath::Pi(), true, true, true, bestChiSquaredCPC, bestFitPosition_CPC,
 	       bestChiSquaredNueFHC, bestChiSquaredNumuFHC, bestChiSquaredNueRHC, bestChiSquaredNumuRHC, bestChiSquaredFHC, bestChiSquaredRHC);
-    //PerformFit(predictionGenerators, predictionVector, 2.0 * TMath::Pi(), true, false, true, bestChiSquaredCPC, bestFitPosition_CPC);
-    //PerformFit(predictionGenerators, predictionVector, 2.0 * TMath::Pi(), false, true, true, bestChiSquaredCPC, bestFitPosition_CPC);
-    //PerformFit(predictionGenerators, predictionVector, 2.0 * TMath::Pi(), false, false, true, bestChiSquaredCPC, bestFitPosition_CPC);
 
+    /*
+    std::cout << "Performing CPC fits..." << std::endl;
+    PerformFit(predictionGenerators, predictionVector, 0.0 * TMath::Pi(), true, true, true, bestChiSquaredCPC, bestFitPosition_CPC);
+    PerformFit(predictionGenerators, predictionVector, 0.0 * TMath::Pi(), true, false, true, bestChiSquaredCPC, bestFitPosition_CPC);
+    PerformFit(predictionGenerators, predictionVector, 0.0 * TMath::Pi(), false, true, true, bestChiSquaredCPC, bestFitPosition_CPC);
+    PerformFit(predictionGenerators, predictionVector, 0.0 * TMath::Pi(), false, false, true, bestChiSquaredCPC, bestFitPosition_CPC);
+
+    PerformFit(predictionGenerators, predictionVector, 1.0 * TMath::Pi(), true, true, true, bestChiSquaredCPC, bestFitPosition_CPC);
+    PerformFit(predictionGenerators, predictionVector, 1.0 * TMath::Pi(), true, false, true, bestChiSquaredCPC, bestFitPosition_CPC);
+    PerformFit(predictionGenerators, predictionVector, 1.0 * TMath::Pi(), false, true, true, bestChiSquaredCPC, bestFitPosition_CPC);
+    PerformFit(predictionGenerators, predictionVector, 1.0 * TMath::Pi(), false, false, true, bestChiSquaredCPC, bestFitPosition_CPC);
+
+    PerformFit(predictionGenerators, predictionVector, 2.0 * TMath::Pi(), true, true, true, bestChiSquaredCPC, bestFitPosition_CPC);
+    PerformFit(predictionGenerators, predictionVector, 2.0 * TMath::Pi(), true, false, true, bestChiSquaredCPC, bestFitPosition_CPC);
+    PerformFit(predictionGenerators, predictionVector, 2.0 * TMath::Pi(), false, true, true, bestChiSquaredCPC, bestFitPosition_CPC);
+    PerformFit(predictionGenerators, predictionVector, 2.0 * TMath::Pi(), false, false, true, bestChiSquaredCPC, bestFitPosition_CPC);
+
+    std::cout << "Performing CPV fits..." << std::endl;
+    PerformFit(predictionGenerators, predictionVector, 0.0 * TMath::Pi(), true, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
+    PerformFit(predictionGenerators, predictionVector, 0.0 * TMath::Pi(), true, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
+    PerformFit(predictionGenerators, predictionVector, 0.0 * TMath::Pi(), false, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
+    PerformFit(predictionGenerators, predictionVector, 0.0 * TMath::Pi(), false, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
+
+    PerformFit(predictionGenerators, predictionVector, 0.5 * TMath::Pi(), true, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
+    PerformFit(predictionGenerators, predictionVector, 0.5 * TMath::Pi(), true, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
+    PerformFit(predictionGenerators, predictionVector, 0.5 * TMath::Pi(), false, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
+    PerformFit(predictionGenerators, predictionVector, 0.5 * TMath::Pi(), false, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
+
+    PerformFit(predictionGenerators, predictionVector, 1.0 * TMath::Pi(), true, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
+    PerformFit(predictionGenerators, predictionVector, 1.0 * TMath::Pi(), true, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
+    PerformFit(predictionGenerators, predictionVector, 1.0 * TMath::Pi(), false, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
+    PerformFit(predictionGenerators, predictionVector, 1.0 * TMath::Pi(), false, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
+
+    PerformFit(predictionGenerators, predictionVector, 1.5 * TMath::Pi(), true, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
+    PerformFit(predictionGenerators, predictionVector, 1.5 * TMath::Pi(), true, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
+    PerformFit(predictionGenerators, predictionVector, 1.5 * TMath::Pi(), false, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
+    PerformFit(predictionGenerators, predictionVector, 1.5 * TMath::Pi(), false, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
+
+    PerformFit(predictionGenerators, predictionVector, 2.0 * TMath::Pi(), true, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
+    PerformFit(predictionGenerators, predictionVector, 2.0 * TMath::Pi(), true, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
+    PerformFit(predictionGenerators, predictionVector, 2.0 * TMath::Pi(), false, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
+    PerformFit(predictionGenerators, predictionVector, 2.0 * TMath::Pi(), false, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
+    */
     chiSquaredCPCValues = bestChiSquaredCPC;
+    chiSquaredCPVValues = bestChiSquaredCPV;
+    chiSquaredValues = bestChiSquaredCPC - bestChiSquaredCPV;
     chiSquaredNueFHC = bestChiSquaredNueFHC;
     chiSquaredNumuFHC = bestChiSquaredNumuFHC;
     chiSquaredNueRHC = bestChiSquaredNueRHC;
@@ -310,11 +357,11 @@ void PerformFit(std::vector<const PredictionInterp*> &predictionGenerators, cons
   calc->SetdCP(deltaCPSeed);
 
   // Get fit variables
-  std::vector<const IFitVar*> fitVariables; /*=
+  std::vector<const IFitVar*> fitVariables;/* =
     {&kFitDmSq32Scaled, &kFitSinSqTheta23,
      &kFitSinSq2Theta12, &kFitDmSq21,
-     &kFitTheta13, &kFitRho};
-					    */
+     &kFitTheta13, &kFitRho};*/
+					   
   if (!fitCPC)
       fitVariables.push_back(&kFitDeltaInPiUnits);
 
@@ -387,6 +434,58 @@ void PerformFit(std::vector<const PredictionInterp*> &predictionGenerators, cons
   if (chiSquared_RHC < bestChiSquared_RHC)
     bestChiSquared_RHC = chiSquared_RHC;
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
+void PerformFit(std::vector<const PredictionInterp*> &predictionGenerators, const std::vector<Spectrum> &predictionVector, const double deltaCPSeed, 
+  const bool isHigherOctant, const bool isPositiveHierarchy, bool fitCPC, double &bestChiSquared, std::map<std::string, float> &bestFitPosition)
+{
+  // Set the oscillation calculator seeed
+  int hie = (isPositiveHierarchy ? 1 : -1);
+  int oct = (isHigherOctant ? 1 : -1);
+
+  //osc::IOscCalcAdjustable* calc = NuFitOscCalc(hie, oct);
+  osc::IOscCalcAdjustable* calc = NuFitOscCalc(1);
+  calc->SetdCP(deltaCPSeed);
+
+  // Get fit variables
+  std::vector<const IFitVar*> fitVariables =
+    {&kFitDmSq32Scaled, &kFitSinSqTheta23,
+     &kFitSinSq2Theta12, &kFitDmSq21,
+     &kFitTheta13, &kFitRho};
+					   
+  if (!fitCPC)
+      fitVariables.push_back(&kFitDeltaInPiUnits);
+
+  // Turn into an experiment (I agree, it is annoying they're here.. but be here they must because the penalty is an experiment)
+  const SingleSampleExperiment experimentNueFHC(predictionGenerators[0], predictionVector[0]);
+  const SingleSampleExperiment experimentNueRHC(predictionGenerators[1], predictionVector[1]);
+  const SingleSampleExperiment experimentNumuFHC(predictionGenerators[2], predictionVector[2]);
+  const SingleSampleExperiment experimentNumuRHC(predictionGenerators[3], predictionVector[3]);
+
+  // include the th13, rho, th12, dm21 penalty.. 
+  Penalizer_GlbLike penalty(hie, oct, true, false, false, 0);
+
+  MultiExperiment multiExperiment({&experimentNueFHC, &experimentNueRHC, &experimentNumuFHC, &experimentNumuRHC, &penalty});
+
+  MinuitFitter fit(&multiExperiment, fitVariables);
+  float chiSquared = fit.Fit(calc)->EvalMetricVal();
+
+   if (chiSquared < bestChiSquared)
+   {
+       bestFitPosition["kFitDmSq32Scaled"] = calc->GetDmsq32();
+       bestFitPosition["kFitSinSqTheta23"] = calc->GetTh23();
+       bestFitPosition["kFitSinSq2Theta12"] = calc->GetTh12();
+       bestFitPosition["kFitDmSq21"] = calc->GetDmsq21();
+       bestFitPosition["kFitTheta13"] = calc->GetTh13();
+       bestFitPosition["kFitRho"] = calc->GetRho();
+       bestFitPosition["kFitDeltaInPiUnits"] = calc->GetdCP();
+
+       bestChiSquared = chiSquared;
+   }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 

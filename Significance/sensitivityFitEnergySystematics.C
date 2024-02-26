@@ -56,7 +56,7 @@ std::vector<Spectrum> Get_EnergySys_NO(std::vector<const PredictionInterp*> &pre
 
 std::default_random_engine generator;
 
-int N_TEST_DELTA_CP_VALUES = 50; //100; // 200
+int N_TEST_DELTA_CP_VALUES = 200; // 200
 bool MAKE_THROWS = true;
 int N_THROWS = MAKE_THROWS ? 500 : 1; //
 
@@ -71,8 +71,7 @@ void sensitivityFitEnergySystematics(int systematicsMode)
 
   //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/energySystematics/IZZLESensitivityPlotsEnergySystematicFit_NO_SplitBySign.root";
   //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/energySystematics/IZZLESensitivityPlotsEnergySystematicThrows_NO_SplitBySign.root";
-
-  std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/energySystematics/IZZLESensitivityPlotsEnergySystematicThrowsMinus_NO_SplitBySign.root";
+  std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/energySystematics/IZZLESpectraPlotsSystematics_NO_SplitBySign_ZERO.root";
 
   std::vector<std::string> systematicsToShift;
 
@@ -202,7 +201,7 @@ void sensitivityFitEnergySystematics(int systematicsMode)
 
   inputFile->Close();
 
-  const double pot = 3.5 * 1.47e21 * 40/1.13;
+  const double pot = 3.5 * 1.1e21 * 40/1.13;
 
   TFile * outputFile = new TFile(outputFileName.c_str(), "CREATE");
   std::cout << "created output file" << std::endl;
@@ -257,7 +256,9 @@ void sensitivityFitEnergySystematics(int systematicsMode)
 
   for (int j = 0; j < nTestCPValues; ++j)
   {
-    const double trueDeltaCP(static_cast<float>(j) * stepSizeCP);
+    //const double trueDeltaCP(static_cast<float>(j) * stepSizeCP);
+
+    const double trueDeltaCP(0.0 * TMath::Pi());
 
       deltaCPValues = trueDeltaCP;
 
@@ -288,17 +289,17 @@ void sensitivityFitEnergySystematics(int systematicsMode)
 
           // Get the prediction
           std::vector<Spectrum> predictionVector;
-          //std::vector<Spectrum> predictionVector_M1;
-          //std::vector<Spectrum> predictionVector_1;
+          std::vector<Spectrum> predictionVector_M1;
+          std::vector<Spectrum> predictionVector_1;
           //std::vector<Spectrum> predictionVector_True;
 
-	  predictionVector = Get_EnergySys_NO(predictionGenerators, systematicsToShift, trueDeltaCP, pot);
-	  //predictionVector = Get_EnergySys_NO(predictionGenerators, systematicsToShift, 0, trueDeltaCP, pot);
-	  //predictionVector_M1 = Get_EnergySys_NO(predictionGenerators, systematicsToShift, -1, trueDeltaCP, pot);
-	  //predictionVector_1 = Get_EnergySys_NO(predictionGenerators, systematicsToShift, 1, trueDeltaCP, pot);
+	  //predictionVector = Get_EnergySys_NO(predictionGenerators, systematicsToShift, trueDeltaCP, pot);
+	  predictionVector = Get_EnergySys_NO(predictionGenerators, systematicsToShift, 0, trueDeltaCP, pot);
+	  predictionVector_M1 = Get_EnergySys_NO(predictionGenerators, systematicsToShift, -1, trueDeltaCP, pot);
+	  predictionVector_1 = Get_EnergySys_NO(predictionGenerators, systematicsToShift, 1, trueDeltaCP, pot);
 	  //predictionVector_True = Get_EnergySys_NO(predictionGenerators_TRUE, systematicsToShift, 0, trueDeltaCP, pot);
 
-	  /*
+	  
 	  predictionVector[0].ToTH1(pot)->Write("nue_0");
 	  predictionVector[1].ToTH1(pot)->Write("anue_0");
 	  predictionVector[2].ToTH1(pot)->Write("numu_0");
@@ -320,7 +321,7 @@ void sensitivityFitEnergySystematics(int systematicsMode)
 	  //predictionVector_True[3].ToTH1(pot)->Write("anumu_True");
 
 	  return;
-	  */
+	  
 
           // Make several fits to avoid falling into the wrong minima (find the best deltaCP)
           double bestChiSquaredCPC(std::numeric_limits<float>::max());
@@ -442,7 +443,7 @@ std::vector<Spectrum> Get_EnergySys_NO(std::vector<const PredictionInterp*> &pre
             if (shortName == sysToShiftName)
             {
 	      //std::cout << "Applying shift to shortName: " << systematic->ShortName() << std::endl;
-	      systematicShifts.SetShift(systematic, (-1.0 * std::fabs(GetBoundedGausThrowThis(systematic->Min() * 0.8, systematic->Max() * 0.8))));
+	      systematicShifts.SetShift(systematic, GetBoundedGausThrowThis(systematic->Min() * 0.8, systematic->Max() * 0.8));
 	    }
 	}
       }

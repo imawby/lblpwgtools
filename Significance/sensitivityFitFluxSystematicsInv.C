@@ -37,15 +37,16 @@
 #include "Math/WrappedTF1.h"
 #include "Math/BrentRootFinder.h"
 #include "TRandom3.h"
+#include "TLegend.h"
 
 #include <random>
 
 using namespace ana;
 
 //const std::string INPUT_FILE_NAME = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/StateFilesFluxSystematicsSplitBySign.root";
-const std::string INPUT_FILE_NAME = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/fluxSystematics/StateFilesFluxSystematicsSplitBySign.root";
+const std::string INPUT_FILE_NAME = "/storage/epp2/phrsnt/lblpwgtools/realRecoStandardCAF/fullEstimate/StateFilesAllSystematicsSplitBySign.root";
 
-void sensitivityFitFluxSystematics();
+void sensitivityFitFluxSystematicsInv();
 
 void PerformFit(std::vector<const PredictionInterp*> &predictionGenerators, const std::vector<Spectrum> &predictionVector, const double deltaCPSeed, 
   const bool isHigherOctant, const bool isPositiveHierarchy, bool fitCPC, double &bestChiSquared, std::map<std::string, float> &bestFitPosition);
@@ -57,10 +58,10 @@ float GetBoundedGausThrowThis(float min, float max);
 std::default_random_engine generator;
 
 int N_TEST_DELTA_CP_VALUES = 200; // 200
-bool MAKE_THROWS = true;
+bool MAKE_THROWS = false;
 int N_THROWS = MAKE_THROWS ? 500 : 1; //
 
-void sensitivityFitFluxSystematics()
+void sensitivityFitFluxSystematicsInv()
 {
   //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESensitivityPlotsFluxSystematicThrows_NO_SplitBySign.root";
   //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/CVNSensitivityPlotsNoSystematics_NO_SplitBySign.root";
@@ -68,7 +69,7 @@ void sensitivityFitFluxSystematics()
 
   //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/fluxSystematics/IZZLESensitivityPlotsFluxSystematicFit_NO_SplitBySign.root";
   //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/fluxSystematics/IZZLESensitivityPlotsFluxSystematicThrows_NO_SplitBySign.root";
-  std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/fluxSystematics/IZZLESpectraPlotsSystematics_NO_SplitBySign_PPIO2.root";
+  std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/realRecoStandardCAF/fluxSystematics/IZZLESpectraFitSystematics_NO_SplitBySign.root";
 
   std::time_t time = std::time(nullptr);
   generator.seed(time);
@@ -161,9 +162,8 @@ void sensitivityFitFluxSystematics()
 
   for (int j = 0; j < nTestCPValues; ++j)
   {
-    //const double trueDeltaCP(static_cast<float>(j) * stepSizeCP);
-
-    const double trueDeltaCP(0.5 * TMath::Pi());
+    const double trueDeltaCP(static_cast<float>(j) * stepSizeCP);
+    //const double trueDeltaCP(0.25 * TMath::Pi());
 
       deltaCPValues = trueDeltaCP;
 
@@ -194,17 +194,17 @@ void sensitivityFitFluxSystematics()
 
           // Get the prediction
           std::vector<Spectrum> predictionVector;
-          std::vector<Spectrum> predictionVector_M1;
-          std::vector<Spectrum> predictionVector_1;
+          //std::vector<Spectrum> predictionVector_M1;
+          //std::vector<Spectrum> predictionVector_1;
           //std::vector<Spectrum> predictionVector_True;
 
-	  //predictionVector = Get_FluxSys_NO(predictionGenerators, systematicsToShift, trueDeltaCP, pot);
-	  predictionVector = Get_FluxSys_NO(predictionGenerators, systematicsToShift, 0, trueDeltaCP, pot);
-	  predictionVector_M1 = Get_FluxSys_NO(predictionGenerators, systematicsToShift, -1, trueDeltaCP, pot);
-	  predictionVector_1 = Get_FluxSys_NO(predictionGenerators, systematicsToShift, 1, trueDeltaCP, pot);
+	  predictionVector = Get_FluxSys_NO(predictionGenerators, systematicsToShift, trueDeltaCP, pot);
+	  //predictionVector = Get_FluxSys_NO(predictionGenerators, systematicsToShift, 0, trueDeltaCP, pot);
+	  //predictionVector_M1 = Get_FluxSys_NO(predictionGenerators, systematicsToShift, -1, trueDeltaCP, pot);
+	  //predictionVector_1 = Get_FluxSys_NO(predictionGenerators, systematicsToShift, 1, trueDeltaCP, pot);
 	  //predictionVector_True = Get_FluxSys_NO(predictionGenerators_TRUE, systematicsToShift, 0, trueDeltaCP, pot);
-
 	  
+	  /*
 	  predictionVector[0].ToTH1(pot)->Write("nue_0");
 	  predictionVector[1].ToTH1(pot)->Write("anue_0");
 	  predictionVector[2].ToTH1(pot)->Write("numu_0");
@@ -226,7 +226,7 @@ void sensitivityFitFluxSystematics()
 	  //predictionVector_True[3].ToTH1(pot)->Write("anumu_True");
 
 	  return;
-	  
+	  */
 
           // Make several fits to avoid falling into the wrong minima (find the best deltaCP)
           double bestChiSquaredCPC(std::numeric_limits<float>::max());
@@ -290,6 +290,36 @@ void sensitivityFitFluxSystematics()
 	    PerformFit(predictionGenerators, predictionVector, 2.0 * TMath::Pi(), false, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
 	    PerformFit(predictionGenerators, predictionVector, 2.0 * TMath::Pi(), false, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
 	  }
+
+	  /*
+	  std::cout << "bestFitDeltaCP: " << (bestFitPosition_CPV.at("kFitDeltaInPiUnits") / TMath::Pi()) << std::endl;
+
+	  osc::IOscCalcAdjustable* truthCalc = NuFitOscCalc(1);
+	  truthCalc->SetdCP(trueDeltaCP);
+	  const Spectrum truth(predictionGenerators[0]->Predict(truthCalc).AsimovData(pot));
+	  auto truthHist(truth.ToTH1(pot, kBlack));
+          truthHist->SetTitle(";Reconstructed #nu_{e} Energy [GeV];Number of Events");
+	  truthHist->GetYaxis()->SetRangeUser(0, 170);
+	  truthHist->Draw("hist same");
+
+	  auto shiftedHist(predictionVector[0].ToTH1(pot, kRed));
+	  shiftedHist->Draw("hist same");
+
+	  osc::IOscCalcAdjustable* fitCalc = NuFitOscCalc(1);
+	  fitCalc->SetdCP(bestFitPosition_CPV.at("kFitDeltaInPiUnits"));
+	  const Spectrum fitSpectrum(predictionGenerators[0]->Predict(fitCalc).AsimovData(pot));
+	  auto fitHist(fitSpectrum.ToTH1(pot, kBlue));
+	  fitHist->Draw("hist same");
+
+	  auto legend = new TLegend(0.1,0.7,0.48,0.9);
+	  legend->AddEntry(truthHist, "Original Spectrum", "l");
+	  legend->AddEntry(shiftedHist, "Shifted Spectrum", "l");
+	  legend->AddEntry(fitHist, "Best-fit #delta_{CP} Spectrum", "l");
+	  legend->SetBorderSize(1);
+	  legend->Draw("same");
+
+	  return;
+	  */
 
           const float chiSquaredDifference(bestChiSquaredCPC - bestChiSquaredCPV);
 
@@ -445,8 +475,13 @@ void PerformFit(std::vector<const PredictionInterp*> &predictionGenerators, cons
       fitVariables.push_back(&kFitDeltaInPiUnits);
 
   // Get systematics
-  std::vector<const ISyst*> systematics(predictionGenerators[0]->GetAllSysts());
-  
+  DUNEFluxSystVector systematicsVector = GetDUNEFluxSysts(30, true, false);
+
+  std::vector<const ISyst*> systematics;
+
+  for (const ISyst * const systematic : systematicsVector)
+      systematics.push_back(systematic);
+
   // Turn into an experiment (I agree, it is annoying they're here.. but be here they must because the penalty is an experiment)
   const SingleSampleExperiment experimentNueFHC(predictionGenerators[0], predictionVector[0]);
   const SingleSampleExperiment experimentNueRHC(predictionGenerators[1], predictionVector[1]);

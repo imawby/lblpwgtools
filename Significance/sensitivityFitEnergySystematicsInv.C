@@ -34,6 +34,7 @@
 #include "CAFAna/Core/ISyst.h"
 
 #include "TF1.h"
+#include "TLegend.h"
 #include "Math/WrappedTF1.h"
 #include "Math/BrentRootFinder.h"
 #include "TRandom3.h"
@@ -42,43 +43,46 @@
 
 using namespace ana;
 
-//const std::string INPUT_FILE_NAME = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/StateFilesFluxSystematicsSplitBySign.root";
-const std::string INPUT_FILE_NAME = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/fluxSystematics/StateFilesFluxSystematicsSplitBySign.root";
+//const std::string INPUT_FILE_NAME = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/StateFilesEnergySystematicsSplitBySign.root";
+const std::string INPUT_FILE_NAME = "/storage/epp2/phrsnt/lblpwgtools/realRecoStandardCAF/fullEstimate/StateFilesAllSystematicsSplitBySign.root";
 
-void sensitivityFitFluxSystematics();
+void sensitivityFitEnergySystematicsInv(int systematicsMode);
 
-void PerformFit(std::vector<const PredictionInterp*> &predictionGenerators, const std::vector<Spectrum> &predictionVector, const double deltaCPSeed, 
-  const bool isHigherOctant, const bool isPositiveHierarchy, bool fitCPC, double &bestChiSquared, std::map<std::string, float> &bestFitPosition);
-std::vector<Spectrum> Get_FluxSys_NO(std::vector<const PredictionInterp*> &predictionGenerators, std::vector<std::string> &systematicsToShift, const double deltaCP, const float pot);
-std::vector<Spectrum> Get_FluxSys_NO(std::vector<const PredictionInterp*> &predictionGenerators, std::vector<std::string> &systematicsToShift, const double shift, const double deltaCP, const float pot);
+void PerformFit(std::vector<const PredictionInterp*> &predictionGenerators, const std::vector<Spectrum> &predictionVector, std::vector<std::string> &systematicsToFitNames, const double deltaCPSeed, 
+		const bool isHigherOctant, const bool isPositiveHierarchy, bool fitCPC, double &bestChiSquared, std::map<std::string, float> &bestFitPosition);
+std::vector<Spectrum> Get_EnergySys_NO(std::vector<const PredictionInterp*> &predictionGenerators, std::vector<std::string> &systematicsToShift, const double deltaCP, const float pot);
 void PerformFitThrow(std::vector<const PredictionInterp*> &predictionGenerators, const std::vector<Spectrum> &predictionVector, const double deltaCPSeed, double &bestChiSquared, std::map<std::string, float> &bestFitPosition);
 float GetBoundedGausThrowThis(float min, float max);
+std::vector<Spectrum> Get_EnergySys_NO(std::vector<const PredictionInterp*> &predictionGenerators, std::vector<std::string> &systematicsToShift, const double shift, const double deltaCP, const float pot);
 
 std::default_random_engine generator;
 
 int N_TEST_DELTA_CP_VALUES = 200; // 200
-bool MAKE_THROWS = true;
+bool MAKE_THROWS = false;
 int N_THROWS = MAKE_THROWS ? 500 : 1; //
 
-void sensitivityFitFluxSystematics()
+void sensitivityFitEnergySystematicsInv()
 {
-  //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESensitivityPlotsFluxSystematicThrows_NO_SplitBySign.root";
-  //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/CVNSensitivityPlotsNoSystematics_NO_SplitBySign.root";
-  //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESpectraPlotsSystematics_NO_SplitBySign_MPIO2.root";
-
-  //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/fluxSystematics/IZZLESensitivityPlotsFluxSystematicFit_NO_SplitBySign.root";
-  //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/fluxSystematics/IZZLESensitivityPlotsFluxSystematicThrows_NO_SplitBySign.root";
-  std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/fluxSystematics/IZZLESpectraPlotsSystematics_NO_SplitBySign_PPIO2.root";
-
   std::time_t time = std::time(nullptr);
   generator.seed(time);
 
-  DUNEFluxSystVector systematicsVector = GetDUNEFluxSysts(30, true, false);
+  //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESensitivityPlotsEnergySystematicFit_NO_SplitBySign.root";
+  //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/CVNSensitivityPlotsEnergySystematicFit_NO_SplitBySign.root";
+  //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/";
+  //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/energySystematics/allEnergy/IZZLESpectraPlotsSystematics_NO_SplitBySign_ZERO.root";
 
-  std::vector<std::string> systematicsToShift;
+  //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/energySystematics/IZZLESensitivityPlotsEnergySystematicFit_NO_SplitBySign.root";
+  //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/energySystematics/IZZLESensitivityPlotsEnergySystematicThrows_NO_SplitBySign.root";
+  //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/energySystematics/IZZLESensitivityPlotsEnergySystematicThrowsMinus_NO_SplitBySign.root";
+  //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/realRecoStandardCAF/energySystematics/IZZLESpectraThrowsSystematics_NO_SplitBySign.root";
+  std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/realRecoStandardCAF/energySystematics/IZZLESpectraFitSystematics_NO_SplitBySign.root";
 
-  for (const ISyst * const systematic : systematicsVector)
-      systematicsToShift.push_back(systematic->ShortName());
+  std::vector<std::string> systematicsToShift = {
+    "EnergyScaleFD", "UncorrFDTotSqrt", "UncorrFDTotInvSqrt", 
+    "ChargedHadUncorrFD", "UncorrFDHadSqrt", "UncorrFDHadInvSqrt", "ChargedHadResFD",
+    "EScaleMuLArFD", "UncorrFDMuSqrt", "UncorrFDMuInvSqrt", "MuonResFD",
+    "NUncorrFD", "UncorrFDNSqrt", "UncorrFDNInvSqrt", "NResFD",
+    "EMUncorrFD", "UncorrFDEMSqrt", "UncorrFDEMInvSqrt", "EMResFD"};
 
   std::cout << "Reading caf files..." << std::endl;
 
@@ -158,12 +162,11 @@ void sensitivityFitFluxSystematics()
   tree->Branch("bestFitRho_CPV", &bestFitRho_CPV);
   tree->Branch("bestFitdCP_CPV", &bestFitdCP_CPV);
 
-
   for (int j = 0; j < nTestCPValues; ++j)
   {
-    //const double trueDeltaCP(static_cast<float>(j) * stepSizeCP);
+    const double trueDeltaCP(static_cast<float>(j) * stepSizeCP);
 
-    const double trueDeltaCP(0.5 * TMath::Pi());
+    //const double trueDeltaCP(0.25 * TMath::Pi());
 
       deltaCPValues = trueDeltaCP;
 
@@ -194,17 +197,17 @@ void sensitivityFitFluxSystematics()
 
           // Get the prediction
           std::vector<Spectrum> predictionVector;
-          std::vector<Spectrum> predictionVector_M1;
-          std::vector<Spectrum> predictionVector_1;
+          //std::vector<Spectrum> predictionVector_M1;
+          //std::vector<Spectrum> predictionVector_1;
           //std::vector<Spectrum> predictionVector_True;
 
-	  //predictionVector = Get_FluxSys_NO(predictionGenerators, systematicsToShift, trueDeltaCP, pot);
-	  predictionVector = Get_FluxSys_NO(predictionGenerators, systematicsToShift, 0, trueDeltaCP, pot);
-	  predictionVector_M1 = Get_FluxSys_NO(predictionGenerators, systematicsToShift, -1, trueDeltaCP, pot);
-	  predictionVector_1 = Get_FluxSys_NO(predictionGenerators, systematicsToShift, 1, trueDeltaCP, pot);
-	  //predictionVector_True = Get_FluxSys_NO(predictionGenerators_TRUE, systematicsToShift, 0, trueDeltaCP, pot);
+	  predictionVector = Get_EnergySys_NO(predictionGenerators, systematicsToShift, trueDeltaCP, pot);
+	  //predictionVector = Get_EnergySys_NO(predictionGenerators, systematicsToShift, 0, trueDeltaCP, pot);
+	  //predictionVector_M1 = Get_EnergySys_NO(predictionGenerators, systematicsToShift, -1, trueDeltaCP, pot);
+	  //predictionVector_1 = Get_EnergySys_NO(predictionGenerators, systematicsToShift, 1, trueDeltaCP, pot);
+	  //predictionVector_True = Get_EnergySys_NO(predictionGenerators_TRUE, systematicsToShift, 0, trueDeltaCP, pot);
 
-	  
+	  /*
 	  predictionVector[0].ToTH1(pot)->Write("nue_0");
 	  predictionVector[1].ToTH1(pot)->Write("anue_0");
 	  predictionVector[2].ToTH1(pot)->Write("numu_0");
@@ -226,7 +229,7 @@ void sensitivityFitFluxSystematics()
 	  //predictionVector_True[3].ToTH1(pot)->Write("anumu_True");
 
 	  return;
-	  
+	  */
 
           // Make several fits to avoid falling into the wrong minima (find the best deltaCP)
           double bestChiSquaredCPC(std::numeric_limits<float>::max());
@@ -247,51 +250,81 @@ void sensitivityFitFluxSystematics()
 	  {
             // CPC Fits
 	    std::cout << "Performing CPC fits..." << std::endl;
-	    PerformFit(predictionGenerators, predictionVector, 0.0 * TMath::Pi(), true, true, true, bestChiSquaredCPC, bestFitPosition_CPC);
-	    PerformFit(predictionGenerators, predictionVector, 0.0 * TMath::Pi(), true, false, true, bestChiSquaredCPC, bestFitPosition_CPC);
-	    PerformFit(predictionGenerators, predictionVector, 0.0 * TMath::Pi(), false, true, true, bestChiSquaredCPC, bestFitPosition_CPC);
-	    PerformFit(predictionGenerators, predictionVector, 0.0 * TMath::Pi(), false, false, true, bestChiSquaredCPC, bestFitPosition_CPC);
+	    PerformFit(predictionGenerators, predictionVector, systematicsToShift, 0.0 * TMath::Pi(), true, true, true, bestChiSquaredCPC, bestFitPosition_CPC);
+	    PerformFit(predictionGenerators, predictionVector, systematicsToShift, 0.0 * TMath::Pi(), true, false, true, bestChiSquaredCPC, bestFitPosition_CPC);
+	    PerformFit(predictionGenerators, predictionVector, systematicsToShift, 0.0 * TMath::Pi(), false, true, true, bestChiSquaredCPC, bestFitPosition_CPC);
+	    PerformFit(predictionGenerators, predictionVector, systematicsToShift, 0.0 * TMath::Pi(), false, false, true, bestChiSquaredCPC, bestFitPosition_CPC);
 
-	    PerformFit(predictionGenerators, predictionVector, 1.0 * TMath::Pi(), true, true, true, bestChiSquaredCPC, bestFitPosition_CPC);
-	    PerformFit(predictionGenerators, predictionVector, 1.0 * TMath::Pi(), true, false, true, bestChiSquaredCPC, bestFitPosition_CPC);
-	    PerformFit(predictionGenerators, predictionVector, 1.0 * TMath::Pi(), false, true, true, bestChiSquaredCPC, bestFitPosition_CPC);
-	    PerformFit(predictionGenerators, predictionVector, 1.0 * TMath::Pi(), false, false, true, bestChiSquaredCPC, bestFitPosition_CPC);
+	    PerformFit(predictionGenerators, predictionVector, systematicsToShift, 1.0 * TMath::Pi(), true, true, true, bestChiSquaredCPC, bestFitPosition_CPC);
+	    PerformFit(predictionGenerators, predictionVector, systematicsToShift, 1.0 * TMath::Pi(), true, false, true, bestChiSquaredCPC, bestFitPosition_CPC);
+	    PerformFit(predictionGenerators, predictionVector, systematicsToShift, 1.0 * TMath::Pi(), false, true, true, bestChiSquaredCPC, bestFitPosition_CPC);
+	    PerformFit(predictionGenerators, predictionVector, systematicsToShift, 1.0 * TMath::Pi(), false, false, true, bestChiSquaredCPC, bestFitPosition_CPC);
 
-	    PerformFit(predictionGenerators, predictionVector, 2.0 * TMath::Pi(), true, true, true, bestChiSquaredCPC, bestFitPosition_CPC);
-	    PerformFit(predictionGenerators, predictionVector, 2.0 * TMath::Pi(), true, false, true, bestChiSquaredCPC, bestFitPosition_CPC);
-	    PerformFit(predictionGenerators, predictionVector, 2.0 * TMath::Pi(), false, true, true, bestChiSquaredCPC, bestFitPosition_CPC);
-	    PerformFit(predictionGenerators, predictionVector, 2.0 * TMath::Pi(), false, false, true, bestChiSquaredCPC, bestFitPosition_CPC);
+	    PerformFit(predictionGenerators, predictionVector, systematicsToShift, 2.0 * TMath::Pi(), true, true, true, bestChiSquaredCPC, bestFitPosition_CPC);
+	    PerformFit(predictionGenerators, predictionVector, systematicsToShift, 2.0 * TMath::Pi(), true, false, true, bestChiSquaredCPC, bestFitPosition_CPC);
+	    PerformFit(predictionGenerators, predictionVector, systematicsToShift, 2.0 * TMath::Pi(), false, true, true, bestChiSquaredCPC, bestFitPosition_CPC);
+	    PerformFit(predictionGenerators, predictionVector, systematicsToShift, 2.0 * TMath::Pi(), false, false, true, bestChiSquaredCPC, bestFitPosition_CPC);
 
             // CPV Fits
 
 	    std::cout << "Performing CPV fits..." << std::endl;
-	    PerformFit(predictionGenerators, predictionVector, 0.0 * TMath::Pi(), true, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
-	    PerformFit(predictionGenerators, predictionVector, 0.0 * TMath::Pi(), true, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
-	    PerformFit(predictionGenerators, predictionVector, 0.0 * TMath::Pi(), false, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
-	    PerformFit(predictionGenerators, predictionVector, 0.0 * TMath::Pi(), false, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
+	    PerformFit(predictionGenerators, predictionVector, systematicsToShift, 0.0 * TMath::Pi(), true, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
+	    PerformFit(predictionGenerators, predictionVector, systematicsToShift, 0.0 * TMath::Pi(), true, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
+	    PerformFit(predictionGenerators, predictionVector, systematicsToShift, 0.0 * TMath::Pi(), false, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
+	    PerformFit(predictionGenerators, predictionVector, systematicsToShift, 0.0 * TMath::Pi(), false, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
 
-	    PerformFit(predictionGenerators, predictionVector, 0.5 * TMath::Pi(), true, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
-	    PerformFit(predictionGenerators, predictionVector, 0.5 * TMath::Pi(), true, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
-	    PerformFit(predictionGenerators, predictionVector, 0.5 * TMath::Pi(), false, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
-	    PerformFit(predictionGenerators, predictionVector, 0.5 * TMath::Pi(), false, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
+	    PerformFit(predictionGenerators, predictionVector, systematicsToShift, 0.5 * TMath::Pi(), true, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
+	    PerformFit(predictionGenerators, predictionVector, systematicsToShift, 0.5 * TMath::Pi(), true, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
+	    PerformFit(predictionGenerators, predictionVector, systematicsToShift, 0.5 * TMath::Pi(), false, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
+	    PerformFit(predictionGenerators, predictionVector, systematicsToShift, 0.5 * TMath::Pi(), false, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
 
-	    PerformFit(predictionGenerators, predictionVector, 1.0 * TMath::Pi(), true, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
-	    PerformFit(predictionGenerators, predictionVector, 1.0 * TMath::Pi(), true, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
-	    PerformFit(predictionGenerators, predictionVector, 1.0 * TMath::Pi(), false, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
-	    PerformFit(predictionGenerators, predictionVector, 1.0 * TMath::Pi(), false, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
+	    PerformFit(predictionGenerators, predictionVector, systematicsToShift, 1.0 * TMath::Pi(), true, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
+	    PerformFit(predictionGenerators, predictionVector, systematicsToShift, 1.0 * TMath::Pi(), true, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
+	    PerformFit(predictionGenerators, predictionVector, systematicsToShift, 1.0 * TMath::Pi(), false, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
+	    PerformFit(predictionGenerators, predictionVector, systematicsToShift, 1.0 * TMath::Pi(), false, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
 
-	    PerformFit(predictionGenerators, predictionVector, 1.5 * TMath::Pi(), true, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
-	    PerformFit(predictionGenerators, predictionVector, 1.5 * TMath::Pi(), true, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
-	    PerformFit(predictionGenerators, predictionVector, 1.5 * TMath::Pi(), false, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
-	    PerformFit(predictionGenerators, predictionVector, 1.5 * TMath::Pi(), false, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
+	    PerformFit(predictionGenerators, predictionVector, systematicsToShift, 1.5 * TMath::Pi(), true, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
+	    PerformFit(predictionGenerators, predictionVector, systematicsToShift, 1.5 * TMath::Pi(), true, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
+	    PerformFit(predictionGenerators, predictionVector, systematicsToShift, 1.5 * TMath::Pi(), false, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
+	    PerformFit(predictionGenerators, predictionVector, systematicsToShift, 1.5 * TMath::Pi(), false, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
 
-	    PerformFit(predictionGenerators, predictionVector, 2.0 * TMath::Pi(), true, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
-	    PerformFit(predictionGenerators, predictionVector, 2.0 * TMath::Pi(), true, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
-	    PerformFit(predictionGenerators, predictionVector, 2.0 * TMath::Pi(), false, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
-	    PerformFit(predictionGenerators, predictionVector, 2.0 * TMath::Pi(), false, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
+	    PerformFit(predictionGenerators, predictionVector, systematicsToShift, 2.0 * TMath::Pi(), true, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
+	    PerformFit(predictionGenerators, predictionVector, systematicsToShift, 2.0 * TMath::Pi(), true, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
+	    PerformFit(predictionGenerators, predictionVector, systematicsToShift, 2.0 * TMath::Pi(), false, true, false, bestChiSquaredCPV, bestFitPosition_CPV);
+	    PerformFit(predictionGenerators, predictionVector, systematicsToShift, 2.0 * TMath::Pi(), false, false, false, bestChiSquaredCPV, bestFitPosition_CPV);
 	  }
 
-          const float chiSquaredDifference(bestChiSquaredCPC - bestChiSquaredCPV);
+	  /*  
+	  std::cout << "bestFitDeltaCP: " << (bestFitPosition_CPV.at("kFitDeltaInPiUnits") / TMath::Pi()) << std::endl;
+
+	  osc::IOscCalcAdjustable* truthCalc = NuFitOscCalc(1);
+	  truthCalc->SetdCP(trueDeltaCP);
+	  const Spectrum truth(predictionGenerators[0]->Predict(truthCalc).AsimovData(pot));
+	  auto truthHist(truth.ToTH1(pot, kBlack));
+          truthHist->SetTitle(";Reconstructed #nu_{e} Energy [GeV];Number of Events");
+	  truthHist->GetYaxis()->SetRangeUser(0, 160);
+	  truthHist->Draw("hist same");
+
+	  auto shiftedHist(predictionVector[0].ToTH1(pot, kRed));
+	  shiftedHist->Draw("hist same");
+
+	  osc::IOscCalcAdjustable* fitCalc = NuFitOscCalc(1);
+	  fitCalc->SetdCP(bestFitPosition_CPV.at("kFitDeltaInPiUnits"));
+	  const Spectrum fitSpectrum(predictionGenerators[0]->Predict(fitCalc).AsimovData(pot));
+	  auto fitHist(fitSpectrum.ToTH1(pot, kBlue));
+	  fitHist->Draw("hist same");
+
+	  auto legend = new TLegend(0.1,0.7,0.48,0.9);
+	  legend->AddEntry(truthHist, "True #delta_{CP} Spectrum", "l");
+	  legend->AddEntry(shiftedHist, "Shifted Spectrum", "l");
+	  legend->AddEntry(fitHist, "Best-fit #delta_{CP} Spectrum", "l");
+	  legend->SetBorderSize(1);
+	  legend->Draw("same");
+
+	  return;
+	  */
+
+    const float chiSquaredDifference(bestChiSquaredCPC - bestChiSquaredCPV);
 
           //std::cout << "////////////////////////////" << std::endl;
           //std::cout << "trueDeltaCP: " << (trueDeltaCP * 180 / 3.14) << std::endl;
@@ -330,7 +363,7 @@ void sensitivityFitFluxSystematics()
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-std::vector<Spectrum> Get_FluxSys_NO(std::vector<const PredictionInterp*> &predictionGenerators, std::vector<std::string> &systematicsToShift, const double deltaCP, const float pot)
+std::vector<Spectrum> Get_EnergySys_NO(std::vector<const PredictionInterp*> &predictionGenerators, std::vector<std::string> &systematicsToShift, const double deltaCP, const float pot)
 {
     // Make systematic throws
     SystShifts systematicShifts;
@@ -348,7 +381,7 @@ std::vector<Spectrum> Get_FluxSys_NO(std::vector<const PredictionInterp*> &predi
             if (shortName == sysToShiftName)
             {
 	      //std::cout << "Applying shift to shortName: " << systematic->ShortName() << std::endl;
-  	        systematicShifts.SetShift(systematic, GetBoundedGausThrowThis(systematic->Min() * 0.8, systematic->Max() * 0.8));
+	      systematicShifts.SetShift(systematic, GetBoundedGausThrowThis(systematic->Min() * 0.8, systematic->Max() * 0.8));
 	    }
 	}
       }
@@ -372,24 +405,21 @@ std::vector<Spectrum> Get_FluxSys_NO(std::vector<const PredictionInterp*> &predi
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-std::vector<Spectrum> Get_FluxSys_NO(std::vector<const PredictionInterp*> &predictionGenerators, std::vector<std::string> &systematicsToShift, const double shift, const double deltaCP, const float pot)
+std::vector<Spectrum> Get_EnergySys_NO(std::vector<const PredictionInterp*> &predictionGenerators, std::vector<std::string> &systematicsToShift, const double shift, const double deltaCP, const float pot)
 {
     // Make systematic throws
     SystShifts systematicShifts;
 
-    if (MAKE_THROWS)
+    std::vector<ISyst const *> systematics(predictionGenerators.front()->GetAllSysts());
+
+    for (const ISyst * const systematic : systematics)
     {
-      std::vector<ISyst const *> systematics(predictionGenerators.front()->GetAllSysts());
+      std::string shortName(systematic->ShortName());
 
-      for (const ISyst * const systematic : systematics)
+      for (std::string &sysToShiftName : systematicsToShift)
       {
-        std::string shortName(systematic->ShortName());
-
-        for (std::string &sysToShiftName : systematicsToShift)
-        {
-            if (shortName == sysToShiftName)
-	      systematicShifts.SetShift(systematic, shift);
-	}
+          if (shortName == sysToShiftName)
+	    systematicShifts.SetShift(systematic, shift);
       }
     }
 
@@ -425,7 +455,7 @@ float GetBoundedGausThrowThis(float min, float max)
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-void PerformFit(std::vector<const PredictionInterp*> &predictionGenerators, const std::vector<Spectrum> &predictionVector, const double deltaCPSeed, 
+void PerformFit(std::vector<const PredictionInterp*> &predictionGenerators, const std::vector<Spectrum> &predictionVector, std::vector<std::string> &systematicsToFitNames, const double deltaCPSeed, 
 		const bool isHigherOctant, const bool isPositiveHierarchy, bool fitCPC, double &bestChiSquared, std::map<std::string, float> &bestFitPosition)
 {
   // Set the oscillation calculator seeed
@@ -446,6 +476,18 @@ void PerformFit(std::vector<const PredictionInterp*> &predictionGenerators, cons
 
   // Get systematics
   std::vector<const ISyst*> systematics(predictionGenerators[0]->GetAllSysts());
+  std::vector<const ISyst*> systematicsToFit;
+
+  for (const ISyst * const systematic : systematics)
+  {
+     std::string shortName(systematic->ShortName());
+
+     for (std::string &sysToFitName : systematicsToFitNames)
+     {
+         if (shortName == sysToFitName)
+	   systematicsToFit.push_back(systematic);
+     }
+  }
   
   // Turn into an experiment (I agree, it is annoying they're here.. but be here they must because the penalty is an experiment)
   const SingleSampleExperiment experimentNueFHC(predictionGenerators[0], predictionVector[0]);
@@ -460,7 +502,7 @@ void PerformFit(std::vector<const PredictionInterp*> &predictionGenerators, cons
 
   float chiSquared(std::numeric_limits<float>::max());
 
-  MinuitFitter fit(&multiExperiment, fitVariables, systematics);
+  MinuitFitter fit(&multiExperiment, fitVariables, systematicsToFit);
   chiSquared = fit.Fit(calc)->EvalMetricVal();
 
    if (chiSquared < bestChiSquared)
@@ -516,13 +558,3 @@ void PerformFitThrow(std::vector<const PredictionInterp*> &predictionGenerators,
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
-
-
-  /*std::cout << "after: " << std::endl;
-  std::cout << "rho: " << calc->GetRho() << std::endl;
-  std::cout << "dmsq21: " << calc->GetDmsq21() << std::endl;
-  std::cout << "dmsq32: " << calc->GetDmsq32() << std::endl;
-  std::cout << "theta12: " << calc->GetTh12() << std::endl;
-  std::cout << "theta13: " << calc->GetTh13() << std::endl;
-  std::cout << "theta23: " << calc->GetTh23() << std::endl;
-  std::cout << "DeltaCP: " << calc->GetdCP() << std::endl;*/

@@ -69,9 +69,10 @@ void sensitivityFitXSecSystematics()
   //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/xsecSystematics/IZZLESpectraPlotsSystematics_NO_SplitBySign_PPIO2.root";
   //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/IZZLESensitivityPlotsXSecSystematicFit_NO_SplitBySign.root";
   //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/CVNSensitivityPlotsXSecSystematicFit_NO_SplitBySign.root";
-  std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/xsecSystematics/IZZLESensitivityPlotsXSecSystematicThrows_NO_SplitBySign.root";
 
-  //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/xsecSystematics/IZZLESpectraPlotsSystematics_NO_SplitBySign_ZERO.root";
+  //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/xsecSystematics/IZZLESensitivityPlotsXSecSystematicThrows_NO_SplitBySign.root";
+  //std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/xsecSystematics/IZZLESensitivityPlotsXSecSystematicFit_NO_SplitBySign.root";
+  std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/realRecoCAF/xsecSystematics/IZZLESpectraPlotsSystematics_NO_SplitBySign_ZERO.root";
 
   std::vector<ana::ISyst const *> systematicsVector = GetListOfSysts(false, true, false, false, true, false, true, false, 0, false);
 
@@ -105,7 +106,7 @@ void sensitivityFitXSecSystematics()
 
   inputFile->Close();
 
-  const double pot = 3.5 * 1.47e21 * 40/1.13;
+  const double pot = 3.5 * 1.1e21 * 40/1.13;
 
   TFile * outputFile = new TFile(outputFileName.c_str(), "CREATE");
   std::cout << "created output file" << std::endl;
@@ -160,8 +161,8 @@ void sensitivityFitXSecSystematics()
 
   for (int j = 0; j < nTestCPValues; ++j)
   {
-    const double trueDeltaCP(static_cast<float>(j) * stepSizeCP);
-    //const double trueDeltaCP(0.0 * TMath::Pi());
+    //const double trueDeltaCP(static_cast<float>(j) * stepSizeCP);
+    const double trueDeltaCP(0.0 * TMath::Pi());
 
       deltaCPValues = trueDeltaCP;
 
@@ -192,17 +193,17 @@ void sensitivityFitXSecSystematics()
 
           // Get the prediction
           std::vector<Spectrum> predictionVector;
-          //std::vector<Spectrum> predictionVector_M1;
-          //std::vector<Spectrum> predictionVector_1;
+          std::vector<Spectrum> predictionVector_M1;
+          std::vector<Spectrum> predictionVector_1;
           //std::vector<Spectrum> predictionVector_True;
 
-	  predictionVector = Get_XSecSys_NO(predictionGenerators, systematicsToShift, trueDeltaCP, pot);
-	  //predictionVector = Get_XSecSys_NO(predictionGenerators, systematicsToShift, 0, trueDeltaCP, pot);
-	  //predictionVector_M1 = Get_XSecSys_NO(predictionGenerators, systematicsToShift, -1, trueDeltaCP, pot);
-	  //predictionVector_1 = Get_XSecSys_NO(predictionGenerators, systematicsToShift, 1, trueDeltaCP, pot);
+	  //predictionVector = Get_XSecSys_NO(predictionGenerators, systematicsToShift, trueDeltaCP, pot);
+	  predictionVector = Get_XSecSys_NO(predictionGenerators, systematicsToShift, 0, trueDeltaCP, pot);
+	  predictionVector_M1 = Get_XSecSys_NO(predictionGenerators, systematicsToShift, -1, trueDeltaCP, pot);
+	  predictionVector_1 = Get_XSecSys_NO(predictionGenerators, systematicsToShift, 1, trueDeltaCP, pot);
 	  //predictionVector_True = Get_XSecSys_NO(predictionGenerators_TRUE, systematicsToShift, 0, trueDeltaCP, pot);
 	  
-	  /*
+	  
 	  predictionVector[0].ToTH1(pot)->Write("nue_0");
 	  predictionVector[1].ToTH1(pot)->Write("anue_0");
 	  predictionVector[2].ToTH1(pot)->Write("numu_0");
@@ -224,7 +225,7 @@ void sensitivityFitXSecSystematics()
 	  //predictionVector_True[3].ToTH1(pot)->Write("anumu_True");
 
 	  return;
-	  */
+	  
 
           // Make several fits to avoid falling into the wrong minima (find the best deltaCP)
           double bestChiSquaredCPC(std::numeric_limits<float>::max());

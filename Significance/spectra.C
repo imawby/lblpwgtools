@@ -42,7 +42,7 @@
 
 using namespace ana;
 
-const std::string INPUT_FILE_NAME = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/StateFilesEnergySystematicsSplitBySign.root";
+const std::string INPUT_FILE_NAME = "/storage/epp2/phrsnt/lblpwgtools/realRecoStandardCAF/fullEstimate/StateFilesAllSystematicsSplitBySign.root";
 
 void spectra();
 
@@ -50,7 +50,7 @@ std::vector<Spectrum> Get_Spectra_NO(std::vector<const PredictionInterp*> &predi
 
 void spectra()
 {
-  std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/standardCAF/spectra/spectra.root";
+  std::string outputFileName = "/storage/epp2/phrsnt/lblpwgtools/realRecoStandardCAF/spectra.root";
 
   TFile * inputFile = TFile::Open(INPUT_FILE_NAME.c_str());
 
@@ -75,7 +75,7 @@ void spectra()
 
   inputFile->Close();
 
-  const double pot = 3.5 * 1.47e21 * 40/1.13;
+  const double pot = 3.5 * 1.1e21 * 40/1.13;
 
   TFile * outputFile = new TFile(outputFileName.c_str(), "CREATE");
   std::cout << "created output file" << std::endl;
